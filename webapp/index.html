@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>CMD Center</title>
+<style>
+  :root { --bg:#0b0f19; --panel:#111827; --panel2:#0f172a; --muted:#94a3b8; --fg:#e2e8f0; --accent:#22d3ee; --accent2:#a78bfa; --danger:#ef4444; --ok:#22c55e; --warn:#f59e0b; --border:#1e293b; }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  html,body { height:100%; background:var(--bg); color:var(--fg); font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",sans-serif; overflow:hidden; touch-action:manipulation; }
+  .grid { display:grid; grid-template-columns:320px 1fr 340px; gap:12px; padding:12px; height:100%; }
+  .panel { background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:10px; overflow:auto; }
+  .panel h2 { font-size:12px; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); margin:0 0 2px; }
+  video, audio { width:100%; background:#000; border-radius:10px; border:1px solid var(--border); }
+  video#localVideo { transform:scaleX(-1); }
+  .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .btn { appearance:none; border:1px solid var(--border); background:#0b1220; color:var(--fg); padding:10px 12px; border-radius:10px; cursor:pointer; min-width:44px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; gap:6px; font-weight:600; }
+  .btn:active { transform:translateY(1px); }
+  .btn.accent { background:linear-gradient(180deg,#0ea5e9,#22d3ee); color:#022c22; border-color:#0ea5e9; }
+  .btn.danger { background:linear-gradient(180deg,#b91c1c,#ef4444); color:#fff; border-color:#ef4444; }
+  .btn.ok { background:linear-gradient(180deg,#15803d,#22c55e); color:#022c22; border-color:#15803d; }
+  .mono { font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; }
+  .stat { background:#0b1220; border:1px solid var(--border); border-radius:10px; padding:8px 10px; display:flex; justify-content:space-between; }
+  .metric { color:var(--accent); }
+  .metric.purple { color:var(--accent2); }
+  input[type=range] { width:100%; accent-color:var(--accent); }
+  .kv { display:flex; justify-content:space-between; gap:6px; }
+  .kv b { color:var(--accent2); }
+  .tabs { display:flex; gap:6px; }
+  .tab { padding:8px 10px; border-radius:999px; border:1px solid var(--border); background:#0b1220; color:var(--muted); cursor:pointer; }
+  .tab.active { background:#0f2a3d; color:var(--accent); border-color:#0ea5e9; }
+  #sys { font-size:12px; color:var(--muted); }
+  #sys .ok { color:var(--ok); } #sys .warn { color:var(--warn); } #sys .bad { color:var(--danger); }
+  #toast { position:fixed; left:50%; bottom:18px; transform:translateX(-50%); background:#0b1220; border:1px solid var(--border); color:var(--fg); padding:10px 14px; border-radius:999px; opacity:0; transition:opacity .2s; pointer-events:none; }
+  #toast.show { opacity:1; }
+  .section { display:flex; flex-direction:column; gap:8px; }
+</style>
+</head>
+<body>
+<div class="grid">
+  <div class="panel">
+    <h2>Interface</h2>
+    <div class="section">
+      <div class="kv"><span><b>Cam</b> tablet → server</span><span id="camState" class="warn">off</span></div>
+      <div class="kv"><span><b>Mic</b> tablet → server</span><span id="micState" class="warn">off</span></div>
+      <div class="row">
+        <button class="btn accent" id="startAV">Start AV</button>
+        <button class="btn danger" id="stopAV">Stop</button>
+      </div>
+      <div style="position:relative">
+        <video id="localVideo" autoplay playsinline muted></video>
+      </div>
+      <audio id="remoteAudio" autoplay controls></audio>
+      <div class="kv"><span><b>Remote server audio</b></span><span id="remoteState" class="warn">none</span></div>
+    </div>
+
+    <h2>Media</h2>
+    <div class="section">
+      <div class="row">
+        <button class="btn" id="prev">⏮</button>
+        <button class="btn accent" id="play">▶</button>
+        <button class="btn" id="pause">⏸</button>
+        <button class="btn" id="next">⏭</button>
+      </div>
+      <div class="kv"><span>Volume</span><span id="volLabel">—</span></div>
+      <input type="range" id="volume" min="0" max="100" value="50">
+      <div class="row">
+        <button class="btn" id="mute">Mute</button>
+        <button class="btn" id="unmute">Unmute</button>
+      </div>
+    </div>
+
+    <h2>Workspace</h2>
+    <div class="section">
+      <div class="row" id="wsButtons"></div>
+    </div>
+
+    <h2>Quick Commands</h2>
+    <div class="section" id="quickCmds"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Hermes</h2>
+    <div class="tabs" id="hermesTabs"></div>
+    <div id="hermesArea" style="flex:1;display:flex;flex-direction:column;gap:10px;overflow:hidden">
+      <div id="history" style="flex:1;overflow:auto;background:#0b1220;border:1px solid var(--border);border-radius:10px;padding:10px;white-space:pre-wrap;color:#cbd5e1"></div>
+      <div class="row">
+        <input id="prompt" style="flex:1;background:#0b1220;color:var(--fg);border:1px solid var(--border);border-radius:10px;padding:10px" placeholder="Ask Hermes…">
+        <button class="btn accent" id="send">Send</button>
+      </div>
+      <div class="tabs" id="macroRow"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>System</h2>
+    <div id="sys">
+      <div class="stat"><span>CPU</span><span class="metric" id="cpu">—</span></div>
+      <div class="stat"><span>RAM</span><span class="metric purple" id="ram">—</span></div>
+      <div class="stat"><span>Disk /</span><span class="metric" id="disk">—</span></div>
+      <div class="stat"><span>GPU</span><span class="metric" id="gpu">—</span></div>
+      <div class="stat"><span>Uptime</span><span class="metric" id="uptime">—</span></div>
+      <div class="stat"><span>Temp</span><span class="metric" id="temp">—</span></div>
+      <div class="stat"><span>Battery</span><span class="metric" id="batt">—</span></div>
+      <div class="stat"><span>Users</span><span class="metric" id="users">—</span></div>
+      <div class="stat"><span>Network</span><span class="metric" id="net">—</span></div>
+      <div class="stat"><span>Top CPU</span><span class="metric" id="topcpu">—</span></div>
+      <div class="stat"><span>Top MEM</span><span class="metric" id="topmem">—</span></div>
+      <div class="row" style="margin-top:4px">
+        <button class="btn" id="lock">🔒 Lock</button>
+        <button class="btn" id="sleep">😴 Sleep</button>
+        <button class="btn danger" id="logout">Logout</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script>
+const $ = s => document.querySelector(s);
+const API = location.origin;
+const toast = (msg)=>{ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1400); };
+
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]))}
+
+async function jget(url,opts={}){ const r=await fetch(url,opts); if(!r.ok) throw new Error(await r.text()); return r.json(); }
+async function jpost(url,body,opts={}){ const r=await fetch(url,{headers:{'Content-Type':'application/json'},body:JSON.stringify(body),...opts}); if(!r.ok) throw new Error(await r.text()); return r.json(); }
+
+/* AV */
+let pc,dc,remoteStream;
+$('#startAV').onclick=async()=>{
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({video:{width:{ideal:1280},height:{ideal:720},frameRate:{ideal:30}},audio:true});
+    $('#localVideo').srcObject=stream;
+    $('#camState').textContent='on'; $('#camState').className='ok';
+    $('#micState').textContent='on'; $('#micState').className='ok';
+    toast('Camera/mic on');
+  } catch(e){ toast('AV error: '+e.message); }
+};
+$('#stopAV').onclick=()=>{
+  const s=$('#localVideo').srcObject; if(s) s.getTracks().forEach(t=>t.stop()); $('#localVideo').srcObject=null;
+  $('#camState').textContent='off'; $('#camState').className='warn';
+  $('#micState').textContent='off'; $('#micState').className='warn';
+  toast('AV off');
+};
+
+/* Media */
+$('#play').onclick=()=>jpost(`${API}/media/play`); $('#pause').onclick=()=>jpost(`${API}/media/pause`);
+$('#prev').onclick=()=>jpost(`${API}/media/prev`); $('#next').onclick=()=>jpost(`${API}/media/next`);
+$('#mute').onclick=()=>jpost(`${API}/media/mute`); $('#unmute').onclick=()=>jpost(`${API}/media/unmute`);
+$('#volume').oninput=async(e)=>{ await jpost(`${API}/media/volume`,{volume:parseInt(e.target.value,10)}); $('#volLabel').textContent=e.target.value+'%'; };
+
+/* Workspaces */
+function renderWS(list){
+  const c=$('#wsButtons'); c.innerHTML='';
+  (list||[]).forEach(ws=>{
+    const b=document.createElement('button'); b.className='btn'; b.textContent=`WS ${ws.index}: ${ws.name}`;
+    b.onclick=async()=>{ await jpost(`${API}/workspace/switch`,{index:ws.index}); toast('Workspace '+ws.name); };
+    c.appendChild(b);
+  });
+}
+
+/* Quick Commands */
+function renderQuick(list){
+  const c=$('#quickCmds'); c.innerHTML='';
+  (list||[]).forEach(cmd=>{
+    const b=document.createElement('button'); b.className='btn'; b.textContent=cmd.label;
+    b.onclick=async()=>{ await jpost(`${API}/command/run`,{command:cmd.command}); toast('Sent: '+cmd.label); };
+    c.appendChild(b);
+  });
+}
+
+/* Hermes macros */
+const MACROS = [
+  {name:'Status', prompt:'Give me a concise system status summary: CPU, RAM, disk, GPU, uptime, network, and anything odd.'},
+  {name:'Focus', prompt:'Switch focus to this chat and report what the active workspace/app is.'},
+  {name:'Monitor', prompt:'Start watching system health in the background and alert on CPU>90%, RAM>90%, disk>95%, or GPU temp>85C.'},
+  {name:'Shortcuts', prompt:'List useful Linux quick commands and suggested Hermes macros for this control center.'},
+  {name:'Project', prompt:'Summarize the current project context and open TODOs in /mnt/ssd/projects.'},
+];
+const TABS = ['Chat','Macro','History'];
+let activeTab='Chat';
+function renderTabs(){
+  const c=$('#hermesTabs'); c.innerHTML='';
+  TABS.forEach(t=>{
+    const b=document.createElement('button'); b.className='tab'+(t===activeTab?' active':'');
+    b.textContent=t; b.onclick=()=>{ activeTab=t; renderTabs(); renderMacros(); }; c.appendChild(b);
+  });
+}
+function renderMacros(){
+  const c=$('#macroRow'); c.innerHTML='';
+  const items = activeTab==='Macro' ? MACROS : [];
+  items.forEach(m=>{
+    const b=document.createElement('button'); b.className='btn'; b.textContent='▶ '+m.name;
+    b.onclick=async()=>{ $('#history').textContent+='\n> '+m.name+'\n'; $('#send').click(); $('#prompt').value=m.prompt; };
+    c.appendChild(b);
+  });
+  if(activeTab==='History'){
+    const b=document.createElement('button'); b.className='btn'; b.textContent='Clear';
+    b.onclick=()=>{ $('#history').textContent=''; };
+    c.appendChild(b);
+  }
+}
+
+$('#send').onclick=async()=>{
+  const text=$('#prompt').value.trim(); if(!text) return;
+  $('#history').textContent+='\nYou: '+text+'\nHermes: ';
+  try {
+    const res = await jpost(`${API}/hermes/prompt`,{prompt:text});
+    $('#history').textContent+=(res.reply||res.text||JSON.stringify(res))+'\n';
+  } catch(e){ $('#history').textContent+='Error: '+e.message+'\n'; }
+  $('#prompt').value='';
+  $('#history').scrollTop=$('#history').scrollHeight;
+};
+
+/* System */
+async function refresh(){
+  try {
+    const s = await jget(`${API}/system/status`);
+    $('#cpu').textContent = s.cpu+'%';
+    $('#ram').textContent = `${s.ram_pct}% (${s.ram_used} / ${s.ram_total})`;
+    $('#disk').textContent = s.disk_pct+'% '+s.disk_used+' / '+s.disk_total;
+    $('#gpu').textContent = s.gpu_pct+'%'+ (s.gpu_temp?' @ '+s.gpu_temp+'C':'');
+    $('#uptime').textContent = s.uptime;
+    $('#temp').textContent = (s.temps||[]).map(t=>`${t.label}:${t.value}${t.unit}`).join(' ') || '—';
+    $('#batt').textContent = s.battery;
+    $('#users').textContent = s.users;
+    $('#net').textContent = s.network;
+    $('#topcpu').textContent = (s.top_cpu||[]).map(x=>x.name+':'+x.pct+'%').join(' | ') || '—';
+    $('#topmem').textContent = (s.top_mem||[]).map(x=>x.name+':'+x.pct+'%').join(' | ') || '—';
+  } catch(e){}
+  setTimeout(refresh, 2000);
+}
+
+$('#lock').onclick=()=>jpost(`${API}/system/lock`); $('#sleep').onclick=()=>jpost(`${API}/system/sleep`); $('#logout').onclick=()=>jpost(`${API}/system/logout`);
+
+(async init=async()=>{
+  renderTabs(); renderMacros(); renderWS([]); renderQuick([]);
+  refresh();
+  try {
+    const cfg = await jget(`${API}/config`);
+    renderWS(cfg.workspaces);
+    renderQuick(cfg.quick_commands);
+  } catch(e){ console.error(e); }
+})();
+</script>
+</body>
+</html>
