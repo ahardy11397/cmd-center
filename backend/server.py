@@ -240,12 +240,9 @@ def _read_users():
 
 def _read_net():
     try:
-        iface = "wlan0"
-        if not Path(f"/sys/class/net/{iface}/operstate").exists():
-            iface = "eth0"
-        state = Path(f"/sys/class/net/{iface}/operstate").read_text().strip()
-        out = subprocess.check_output(["ip","-br","addr","show",iface], text=True)
-        return f"{iface}:{state} " + out.strip().split()[2:]
+        out = subprocess.check_output(["ip","-br","addr"], text=True)
+        lines = [l for l in out.splitlines() if "UP" in l and not l.startswith("lo ")]
+        return "; ".join(x.strip() for x in lines) or "—"
     except Exception:
         return "—"
 
@@ -259,7 +256,8 @@ def _read_uptime():
 def _top(mode):
     try:
         field = 2 if mode=="cpu" else 3
-        out = subprocess.check_output(["ps","-eo","pid,pcpu,pmem,comm","--sort=-pcpu"], text=True)
+        sort_flag = "-pcpu" if mode=="cpu" else "-pmem"
+        out = subprocess.check_output(["ps","-eo","pid,pcpu,pmem,comm",f"--sort=-{sort_flag}"], text=True)
         lines = out.strip().splitlines()[1:4]
         return [{"name": l.split()[-1], "pct": l.split()[field]} for l in lines]
     except Exception:
@@ -267,4 +265,4 @@ def _top(mode):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8080, log_level="warning")
+    uvicorn.run(app, host="0.0.0.0", port=8081, log_level="warning")
