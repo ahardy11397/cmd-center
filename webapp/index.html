@@ -8,52 +8,166 @@
   :root { --bg:#0b0f19; --panel:#111827; --panel2:#0f172a; --muted:#94a3b8; --fg:#e2e8f0; --accent:#22d3ee; --accent2:#a78bfa; --danger:#ef4444; --ok:#22c55e; --warn:#f59e0b; --border:#1e293b; }
   * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
   html,body { height:100%; background:var(--bg); color:var(--fg); font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",sans-serif; overflow:hidden; touch-action:manipulation; }
-  .grid { display:grid; grid-template-columns:320px 1fr 340px; gap:12px; padding:12px; height:100%; }
-  .panel { background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:10px; overflow:auto; }
-  .panel h2 { font-size:12px; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); margin:0 0 2px; }
-  video, audio { width:100%; background:#000; border-radius:10px; border:1px solid var(--border); }
-  video#localVideo { transform:scaleX(-1); }
+  .tabs { display:flex; gap:6px; padding:10px 12px 0; background:linear-gradient(180deg,#0b1220,var(--bg)); position:sticky; top:0; z-index:10; }
+  .tab { padding:10px 14px; border-radius:999px; border:1px solid var(--border); background:#0b1220; color:var(--muted); cursor:pointer; font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.08em; }
+  .tab.active { background:#0f2a3d; color:var(--accent); border-color:#0ea5e9; }
+  .view { display:none; height:calc(100% - 48px); overflow:auto; padding:12px; gap:12px; }
+  .view.active { display:grid; }
+  .grid2 { grid-template-columns:1fr 1fr; }
+  .grid3 { grid-template-columns:1fr 1fr 1fr; }
+  .panel { background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:8px; }
+  .panel h2 { font-size:11px; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); margin:0 0 2px; }
   .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-  .btn { appearance:none; border:1px solid var(--border); background:#0b1220; color:var(--fg); padding:10px 12px; border-radius:10px; cursor:pointer; min-width:44px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; gap:6px; font-weight:600; }
-  .btn:active { transform:translateY(1px); }
+  .btn { appearance:none; border:1px solid var(--border); background:#0b1220; color:var(--fg); padding:10px 12px; border-radius:10px; cursor:pointer; min-width:44px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; gap:6px; font-weight:600; font-size:13px; }
+  .btn:active { transform:translateY(1px); filter:brightness(1.2); }
   .btn.accent { background:linear-gradient(180deg,#0ea5e9,#22d3ee); color:#022c22; border-color:#0ea5e9; }
   .btn.danger { background:linear-gradient(180deg,#b91c1c,#ef4444); color:#fff; border-color:#ef4444; }
   .btn.ok { background:linear-gradient(180deg,#15803d,#22c55e); color:#022c22; border-color:#15803d; }
+  .btn.warn { background:linear-gradient(180deg,#b45309,#f59e0b); color:#1a1000; border-color:#b45309; }
   .mono { font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; }
-  .stat { background:#0b1220; border:1px solid var(--border); border-radius:10px; padding:8px 10px; display:flex; justify-content:space-between; }
-  .metric { color:var(--accent); }
+  .kv { display:flex; justify-content:space-between; gap:6px; font-size:13px; }
+  .kv b { color:var(--accent2); font-weight:600; }
+  .stat { background:#0b1220; border:1px solid var(--border); border-radius:10px; padding:10px; display:flex; justify-content:space-between; align-items:center; }
+  .metric { color:var(--accent); font-weight:700; font-size:13px; }
   .metric.purple { color:var(--accent2); }
-  input[type=range] { width:100%; accent-color:var(--accent); }
-  .kv { display:flex; justify-content:space-between; gap:6px; }
-  .kv b { color:var(--accent2); }
-  .tabs { display:flex; gap:6px; }
-  .tab { padding:8px 10px; border-radius:999px; border:1px solid var(--border); background:#0b1220; color:var(--muted); cursor:pointer; }
-  .tab.active { background:#0f2a3d; color:var(--accent); border-color:#0ea5e9; }
-  #sys { font-size:12px; color:var(--muted); }
-  #sys .ok { color:var(--ok); } #sys .warn { color:var(--warn); } #sys .bad { color:var(--danger); }
-  #toast { position:fixed; left:50%; bottom:18px; transform:translateX(-50%); background:#0b1220; border:1px solid var(--border); color:var(--fg); padding:10px 14px; border-radius:999px; opacity:0; transition:opacity .2s; pointer-events:none; }
+  .bar-wrap { height:8px; background:#0b1220; border-radius:999px; border:1px solid var(--border); overflow:hidden; }
+  .bar { height:100%; border-radius:999px; background:linear-gradient(90deg,#0ea5e9,#22d3ee); width:0%; transition:width .4s ease; }
+  .bar.warn { background:linear-gradient(90deg,#f59e0b,#ef4444); }
+  video, audio { width:100%; background:#000; border-radius:10px; border:1px solid var(--border); }
+  video#localVideo { transform:scaleX(-1); }
+  #toast { position:fixed; left:50%; bottom:18px; transform:translateX(-50%); background:#0b1220; border:1px solid var(--border); color:var(--fg); padding:10px 14px; border-radius:999px; opacity:0; transition:opacity .2s; pointer-events:none; z-index:50; font-weight:600; }
   #toast.show { opacity:1; }
-  .section { display:flex; flex-direction:column; gap:8px; }
+  table { width:100%; border-collapse:collapse; font-size:12px; }
+  th,td { text-align:left; padding:6px 4px; border-bottom:1px solid var(--border); }
+  th { color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.08em; font-size:11px; }
+  .section { display:flex; flex-direction:column; gap:6px; }
+  .wrap { overflow:auto; }
+  .empty { color:var(--muted); font-style:italic; font-size:12px; }
 </style>
 </head>
 <body>
-<div class="grid">
+<div class="tabs" id="tabs"></div>
+
+<div class="view active grid3" id="dashboard">
   <div class="panel">
-    <h2>Interface</h2>
+    <h2>System</h2>
+    <div class="section" id="sys">
+      <div class="stat"><span>CPU</span><span class="metric" id="cpu">—</span></div>
+      <div class="bar-wrap"><div class="bar" id="cpuBar"></div></div>
+      <div class="stat"><span>RAM</span><span class="metric purple" id="ram">—</span></div>
+      <div class="bar-wrap"><div class="bar" id="ramBar"></div></div>
+      <div class="stat"><span>Disk /</span><span class="metric" id="disk">—</span></div>
+      <div class="bar-wrap"><div class="bar" id="diskBar"></div></div>
+      <div class="stat"><span>GPU</span><span class="metric" id="gpu">—</span></div>
+      <div class="bar-wrap"><div class="bar" id="gpuBar"></div></div>
+      <div class="stat"><span>Uptime</span><span class="metric" id="uptime">—</span></div>
+      <div class="stat"><span>Battery</span><span class="metric" id="batt">—</span></div>
+      <div class="stat"><span>Users</span><span class="metric" id="users">—</span></div>
+      <div class="stat"><span>Network</span><span class="metric" id="net">—</span></div>
+      <div class="stat"><span>Top CPU</span><span class="metric" id="topcpu">—</span></div>
+      <div class="stat"><span>Top MEM</span><span class="metric" id="topmem">—</span></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Quick Actions</h2>
     <div class="section">
-      <div class="kv"><span><b>Cam</b> tablet → server</span><span id="camState" class="warn">off</span></div>
-      <div class="kv"><span><b>Mic</b> tablet → server</span><span id="micState" class="warn">off</span></div>
+      <div class="row" id="quickActions1"></div>
+      <div class="row" id="quickActions2"></div>
+      <div class="row" id="quickActions3"></div>
+      <div class="row" id="quickActions4"></div>
+    </div>
+    <h2 style="margin-top:4px">Logs</h2>
+    <div class="section">
+      <div class="row" id="logButtons"></div>
+      <div class="wrap" style="flex:1;min-height:0">
+        <pre id="logView" class="empty" style="background:#0b1220;border:1px solid var(--border);border-radius:10px;padding:10px;height:100%;overflow:auto;font-size:11px;color:#cbd5e1">Tap a log to view</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Workspace</h2>
+    <div class="section">
+      <div class="row" id="wsButtons"></div>
+    </div>
+    <h2 style="margin-top:4px">Apps</h2>
+    <div class="section" id="apps"></div>
+    <h2 style="margin-top:4px">Media</h2>
+    <div class="section">
+      <div class="row">
+        <button class="btn" id="prev">⏮</button>
+        <button class="btn accent" id="play">▶</button>
+        <button class="btn" id="pause">⏸</button>
+        <button class="btn" id="next">⏭</button>
+      </div>
+      <div class="kv"><span>Volume</span><span id="volLabel">50%</span></div>
+      <input type="range" id="volume" min="0" max="100" value="50">
+      <div class="row">
+        <button class="btn" id="mute">Mute</button>
+        <button class="btn" id="unmute">Unmute</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="view grid2" id="monitor">
+  <div class="panel">
+    <h2>Processes</h2>
+    <div class="wrap" style="flex:1;min-height:0">
+      <table>
+        <thead><tr><th>PID</th><th>CPU%</th><th>MEM%</th><th>Name</th></tr></thead>
+        <tbody id="procTable"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>Network</h2>
+    <div class="section" id="netInfo"></div>
+    <h2 style="margin-top:4px">Interfaces</h2>
+    <div class="wrap" style="flex:1;min-height:0">
+      <pre id="netRaw" style="background:#0b1220;border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11px;color:#cbd5e1;overflow:auto;height:100%"></pre>
+    </div>
+  </div>
+</div>
+
+<div class="view grid2" id="tools">
+  <div class="panel">
+    <h2>Terminal</h2>
+    <div class="section" id="terminalActions"></div>
+    <h2 style="margin-top:4px">Utilities</h2>
+    <div class="section" id="utilActions"></div>
+  </div>
+  <div class="panel">
+    <h2>Capture</h2>
+    <div class="section" id="captureActions"></div>
+    <h2 style="margin-top:4px">System</h2>
+    <div class="section" id="sysActions"></div>
+  </div>
+</div>
+
+<div class="view grid3" id="av">
+  <div class="panel">
+    <h2>Camera / Mic</h2>
+    <div class="section">
+      <div class="kv"><span><b>Cam</b> tablet → server</span><span id="camState" class="metric">off</span></div>
+      <div class="kv"><span><b>Mic</b> tablet → server</span><span id="micState" class="metric">off</span></div>
       <div class="row">
         <button class="btn accent" id="startAV">Start AV</button>
         <button class="btn danger" id="stopAV">Stop</button>
       </div>
-      <div style="position:relative">
-        <video id="localVideo" autoplay playsinline muted></video>
-      </div>
-      <audio id="remoteAudio" autoplay controls></audio>
-      <div class="kv"><span><b>Remote server audio</b></span><span id="remoteState" class="warn">none</span></div>
+      <div><video id="localVideo" autoplay playsinline muted></video></div>
+      <div class="kv"><span><b>Remote server audio</b></span><span id="remoteState" class="metric">none</span></div>
     </div>
-
+  </div>
+  <div class="panel">
+    <h2>Screen</h2>
+    <div class="section">
+      <div class="row" id="captureList"></div>
+      <pre id="captureStatus" style="background:#0b1220;border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11px;color:#cbd5e1;height:140px;overflow:auto" class="empty">Idle</pre>
+    </div>
+  </div>
+  <div class="panel">
     <h2>Media</h2>
     <div class="section">
       <div class="row">
@@ -62,54 +176,11 @@
         <button class="btn" id="pause">⏸</button>
         <button class="btn" id="next">⏭</button>
       </div>
-      <div class="kv"><span>Volume</span><span id="volLabel">—</span></div>
-      <input type="range" id="volume" min="0" max="100" value="50">
+      <div class="kv"><span>Volume</span><span id="volLabel2">50%</span></div>
+      <input type="range" id="volume2" min="0" max="100" value="50">
       <div class="row">
-        <button class="btn" id="mute">Mute</button>
-        <button class="btn" id="unmute">Unmute</button>
-      </div>
-    </div>
-
-    <h2>Workspace</h2>
-    <div class="section">
-      <div class="row" id="wsButtons"></div>
-    </div>
-
-    <h2>Quick Commands</h2>
-    <div class="section" id="quickCmds"></div>
-  </div>
-
-  <div class="panel">
-    <h2>Hermes</h2>
-    <div class="tabs" id="hermesTabs"></div>
-    <div id="hermesArea" style="flex:1;display:flex;flex-direction:column;gap:10px;overflow:hidden">
-      <div id="history" style="flex:1;overflow:auto;background:#0b1220;border:1px solid var(--border);border-radius:10px;padding:10px;white-space:pre-wrap;color:#cbd5e1"></div>
-      <div class="row">
-        <input id="prompt" style="flex:1;background:#0b1220;color:var(--fg);border:1px solid var(--border);border-radius:10px;padding:10px" placeholder="Ask Hermes…">
-        <button class="btn accent" id="send">Send</button>
-      </div>
-      <div class="tabs" id="macroRow"></div>
-    </div>
-  </div>
-
-  <div class="panel">
-    <h2>System</h2>
-    <div id="sys">
-      <div class="stat"><span>CPU</span><span class="metric" id="cpu">—</span></div>
-      <div class="stat"><span>RAM</span><span class="metric purple" id="ram">—</span></div>
-      <div class="stat"><span>Disk /</span><span class="metric" id="disk">—</span></div>
-      <div class="stat"><span>GPU</span><span class="metric" id="gpu">—</span></div>
-      <div class="stat"><span>Uptime</span><span class="metric" id="uptime">—</span></div>
-      <div class="stat"><span>Temp</span><span class="metric" id="temp">—</span></div>
-      <div class="stat"><span>Battery</span><span class="metric" id="batt">—</span></div>
-      <div class="stat"><span>Users</span><span class="metric" id="users">—</span></div>
-      <div class="stat"><span>Network</span><span class="metric" id="net">—</span></div>
-      <div class="stat"><span>Top CPU</span><span class="metric" id="topcpu">—</span></div>
-      <div class="stat"><span>Top MEM</span><span class="metric" id="topmem">—</span></div>
-      <div class="row" style="margin-top:4px">
-        <button class="btn" id="lock">🔒 Lock</button>
-        <button class="btn" id="sleep">😴 Sleep</button>
-        <button class="btn danger" id="logout">Logout</button>
+        <button class="btn" id="mute2">Mute</button>
+        <button class="btn" id="unmute2">Unmute</button>
       </div>
     </div>
   </div>
@@ -120,127 +191,204 @@
 const $ = s => document.querySelector(s);
 const API = location.origin;
 const toast = (msg)=>{ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1400); };
-
+async function jget(url){ const r=await fetch(url); if(!r.ok) throw new Error(await r.text()); return r.json(); }
+async function jpost(url,body){ const r=await fetch(url,{headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})}); if(!r.ok) throw new Error(await r.text()); return r.json(); }
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]))}
 
-async function jget(url,opts={}){ const r=await fetch(url,opts); if(!r.ok) throw new Error(await r.text()); return r.json(); }
-async function jpost(url,body,opts={}){ const r=await fetch(url,{headers:{'Content-Type':'application/json'},body:JSON.stringify(body),...opts}); if(!r.ok) throw new Error(await r.text()); return r.json(); }
+const TABS = [
+  {id:'dashboard',label:'Dashboard'},
+  {id:'monitor',label:'Monitor'},
+  {id:'tools',label:'Tools'},
+  {id:'av',label:'AV'},
+];
+let active='dashboard';
+function renderTabs(){
+  const c=$('#tabs'); c.innerHTML='';
+  TABS.forEach(t=>{
+    const b=document.createElement('button'); b.className='tab'+(t.id===active?' active':'');
+    b.textContent=t.label; b.onclick=()=>{
+      active=t.id;
+      document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+      $(`#${t.id}`).classList.add('active');
+      renderTabs();
+    }; c.appendChild(b);
+  });
+}
 
-/* AV */
-let pc,dc,remoteStream;
-$('#startAV').onclick=async()=>{
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({video:{width:{ideal:1280},height:{ideal:720},frameRate:{ideal:30}},audio:true});
-    $('#localVideo').srcObject=stream;
-    $('#camState').textContent='on'; $('#camState').className='ok';
-    $('#micState').textContent='on'; $('#micState').className='ok';
-    toast('Camera/mic on');
-  } catch(e){ toast('AV error: '+e.message); }
-};
-$('#stopAV').onclick=()=>{
-  const s=$('#localVideo').srcObject; if(s) s.getTracks().forEach(t=>t.stop()); $('#localVideo').srcObject=null;
-  $('#camState').textContent='off'; $('#camState').className='warn';
-  $('#micState').textContent='off'; $('#micState').className='warn';
-  toast('AV off');
-};
+function action(label,path,body){
+  const b=document.createElement('button'); b.className='btn'; b.textContent=label;
+  b.onclick=async()=>{ try { const r=await jpost(API+path,body); toast(label+' ✓'); } catch(e){ toast(label+' ✗'); } };
+  return b;
+}
 
-/* Media */
-$('#play').onclick=()=>jpost(`${API}/media/play`); $('#pause').onclick=()=>jpost(`${API}/media/pause`);
-$('#prev').onclick=()=>jpost(`${API}/media/prev`); $('#next').onclick=()=>jpost(`${API}/media/next`);
-$('#mute').onclick=()=>jpost(`${API}/media/mute`); $('#unmute').onclick=()=>jpost(`${API}/media/unmute`);
-$('#volume').oninput=async(e)=>{ await jpost(`${API}/media/volume`,{volume:parseInt(e.target.value,10)}); $('#volLabel').textContent=e.target.value+'%'; };
+/* Dashboard */
+const QUICK = [
+  {label:'Terminal',path:'/apps/terminal'},
+  {label:'Files',path:'/apps/files'},
+  {label:'Browser',path:'/apps/browser'},
+  {label:'Text Editor',path:'/apps/editor'},
+  {label:'Screenshot',path:'/capture/screenshot'},
+  {label:'Lock',path:'/system/lock'},
+  {label:'Sleep',path:'/system/sleep'},
+  {label:'Logout',path:'/system/logout'},
+];
+function renderQuick(){
+  [['quickActions1','quickActions2','quickActions3','quickActions4'],[]].forEach((arr,idx)=>{
+    const c=$(`#${arr[idx]}`); if(!c) return; c.innerHTML='';
+    QUICK.slice(idx*4,idx*4+4).forEach(q=> c.appendChild(action(q.label,q.path)));
+  });
+  const lc=$('#logButtons'); lc.innerHTML='';
+  ['/var/log/syslog','/var/log/kern.log','/var/log/auth.log','/var/log/dpkg.log','~/.local/share/xorg/Xorg.0.log'].forEach(p=>{
+    const b=document.createElement('button'); b.className='btn'; b.textContent=p.split('/').pop();
+    b.onclick=async()=>{ try { const r=await jget(`${API}/logs?path=${encodeURIComponent(p)}&n=80`); const el=$('#logView'); el.textContent=r.text||'empty'; el.classList.remove('empty'); } catch(e){ toast('Log error'); } };
+    lc.appendChild(b);
+  });
+}
 
 /* Workspaces */
 function renderWS(list){
   const c=$('#wsButtons'); c.innerHTML='';
-  (list||[]).forEach(ws=>{
-    const b=document.createElement('button'); b.className='btn'; b.textContent=`WS ${ws.index}: ${ws.name}`;
-    b.onclick=async()=>{ await jpost(`${API}/workspace/switch`,{index:ws.index}); toast('Workspace '+ws.name); };
+  (list||[]).slice(0,6).forEach(ws=>{
+    const b=document.createElement('button'); b.className='btn'; b.textContent=`WS ${ws.index}`;
+    b.onclick=async()=>{ await jpost(`${API}/workspace/switch`,{index:ws.index}); toast('WS '+ws.name); };
     c.appendChild(b);
   });
 }
 
-/* Quick Commands */
-function renderQuick(list){
-  const c=$('#quickCmds'); c.innerHTML='';
-  (list||[]).forEach(cmd=>{
-    const b=document.createElement('button'); b.className='btn'; b.textContent=cmd.label;
-    b.onclick=async()=>{ await jpost(`${API}/command/run`,{command:cmd.command}); toast('Sent: '+cmd.label); };
+/* Apps */
+function renderApps(){
+  const apps=[
+    {name:'Firefox',cmd:'firefox'},
+    {name:'Files',cmd:'thunar'},
+    {name:'Terminal',cmd:'xfce4-terminal'},
+    {name:'Text Editor',cmd:'mousepad'},
+    {name:'Calculator',cmd:'xfce4-calculator'},
+    {name:'Settings',cmd:'xfce4-settings-manager'},
+    {name:'Docker',cmd:'docker'},
+  ];
+  const c=$('#apps'); c.innerHTML='';
+  apps.forEach(a=>{
+    const b=document.createElement('button'); b.className='btn'; b.textContent=a.name;
+    b.onclick=async()=>{ await jpost(`${API}/apps/launch`,{command:a.cmd}); toast(a.name); };
     c.appendChild(b);
   });
 }
 
-/* Hermes macros */
-const MACROS = [
-  {name:'Status', prompt:'Give me a concise system status summary: CPU, RAM, disk, GPU, uptime, network, and anything odd.'},
-  {name:'Focus', prompt:'Switch focus to this chat and report what the active workspace/app is.'},
-  {name:'Monitor', prompt:'Start watching system health in the background and alert on CPU>90%, RAM>90%, disk>95%, or GPU temp>85C.'},
-  {name:'Shortcuts', prompt:'List useful Linux quick commands and suggested Hermes macros for this control center.'},
-  {name:'Project', prompt:'Summarize the current project context and open TODOs in /mnt/ssd/projects.'},
-];
-const TABS = ['Chat','Macro','History'];
-let activeTab='Chat';
-function renderTabs(){
-  const c=$('#hermesTabs'); c.innerHTML='';
-  TABS.forEach(t=>{
-    const b=document.createElement('button'); b.className='tab'+(t===activeTab?' active':'');
-    b.textContent=t; b.onclick=()=>{ activeTab=t; renderTabs(); renderMacros(); }; c.appendChild(b);
-  });
-}
-function renderMacros(){
-  const c=$('#macroRow'); c.innerHTML='';
-  const items = activeTab==='Macro' ? MACROS : [];
-  items.forEach(m=>{
-    const b=document.createElement('button'); b.className='btn'; b.textContent='▶ '+m.name;
-    b.onclick=async()=>{ $('#history').textContent+='\n> '+m.name+'\n'; $('#send').click(); $('#prompt').value=m.prompt; };
-    c.appendChild(b);
-  });
-  if(activeTab==='History'){
-    const b=document.createElement('button'); b.className='btn'; b.textContent='Clear';
-    b.onclick=()=>{ $('#history').textContent=''; };
-    c.appendChild(b);
-  }
-}
-
-$('#send').onclick=async()=>{
-  const text=$('#prompt').value.trim(); if(!text) return;
-  $('#history').textContent+='\nYou: '+text+'\nHermes: ';
+/* AV */
+$('#startAV').onclick=async()=>{
   try {
-    const res = await jpost(`${API}/hermes/prompt`,{prompt:text});
-    $('#history').textContent+=(res.reply||res.text||JSON.stringify(res))+'\n';
-  } catch(e){ $('#history').textContent+='Error: '+e.message+'\n'; }
-  $('#prompt').value='';
-  $('#history').scrollTop=$('#history').scrollHeight;
+    const stream = await navigator.mediaDevices.getUserMedia({video:{width:{ideal:1280},height:{ideal:720},frameRate:{ideal:30}},audio:true});
+    $('#localVideo').srcObject=stream; $('#camState').textContent='on'; $('#camState').style.color='var(--ok)'; $('#micState').textContent='on'; $('#micState').style.color='var(--ok)'; toast('AV on');
+  } catch(e){ toast('AV error: '+e.message); }
+};
+$('#stopAV').onclick=()=>{
+  const s=$('#localVideo').srcObject; if(s) s.getTracks().forEach(t=>t.stop()); $('#localVideo').srcObject=null;
+  $('#camState').textContent='off'; $('#camState').style.color='var(--muted)'; $('#micState').textContent='off'; $('#micState').style.color='var(--muted)'; toast('AV off');
 };
 
+/* Media */
+['play','pause','prev','next'].forEach(id=>{
+  $(`#${id}`).onclick=()=>jpost(`${API}/media/${id==='prev'?'prev':id==='next'?'next':id}`);
+});
+['mute','mute2'].forEach(id=>{ $(`#${id}`).onclick=()=>jpost(`${API}/media/mute`); });
+['unmute','unmute2'].forEach(id=>{ $(`#${id}`).onclick=()=>jpost(`${API}/media/unmute`); });
+function bindVolume(id,labelId){
+  $(`#${id}`).oninput=async e=>{ await jpost(`${API}/media/volume`,{volume:parseInt(e.target.value,10)}); $(`#${labelId}`).textContent=e.target.value+'%'; };
+}
+bindVolume('volume','volLabel'); bindVolume('volume2','volLabel2');
+
+/* Capture */
+const CAPTURE=[
+  {label:'Screenshot',path:'/capture/screenshot'},
+  {label:'Screen Rec',path:'/capture/record',body:{action:'toggle'}},
+  {label:'Stop Rec',path:'/capture/record',body:{action:'stop'}},
+];
+function renderCapture(){
+  const c=$('#captureList'); c.innerHTML='';
+  CAPTURE.forEach(cap=> c.appendChild(action(cap.label,cap.path,cap.body)));
+}
+
 /* System */
+const SYS_ACTIONS=[
+  {label:'Lock',path:'/system/lock'},
+  {label:'Sleep',path:'/system/sleep'},
+  {label:'Logout',path:'/system/logout'},
+  {label:'Reboot',path:'/system/reboot'},
+  {label:'Shutdown',path:'/system/shutdown'},
+];
+function renderSys(){
+  const c=$('#sysActions'); c.innerHTML='';
+  SYS_ACTIONS.forEach(s=> c.appendChild(action(s.label,s.path)));
+}
+
+/* Terminal & Utils */
+const TERMINAL_ACTIONS=[
+  {label:'htop',cmd:'kitty -- htop || xfce4-terminal -- htop'},
+  {label:'btop',cmd:'kitty -- btop || xfce4-terminal -- btop'},
+  {label:'Docker',cmd:"kitty -- bash -lc 'docker ps -a; read'"},
+  {label:'Netstat',cmd:"kitty -- bash -lc 'ss -tulpn; read'"},
+  {label:'Journal',cmd:"kitty -- bash -lc 'journalctl -p err -n 50 --no-pager; read'"},
+];
+const UTIL_ACTIONS=[
+  {label:'Ping Google',cmd:"kitty -- bash -lc 'ping -c 5 8.8.8.8; read'"},
+  {label:'Speedtest',cmd:"kitty -- bash -lc 'curl -s https://install.speedtest.net/app/cli/install.deb.sh | sudo bash && speedtest; read'"},
+  {label:'Update',cmd:"kitty -- bash -lc 'sudo apt update && sudo apt upgrade -y; read'"},
+  {label:'Disk Usage',cmd:"kitty -- bash -lc 'ncdu /; read'"},
+  {label:'NM Connections',cmd:"kitty -- bash -lc 'nmcli con show; read'"},
+  {label:'Wifi Scan',cmd:"kitty -- bash -lc 'nmcli dev wifi list; read'"},
+];
+function renderTools(){
+  ['terminalActions','utilActions'].forEach((id,idx)=>{
+    const list= idx===0 ? TERMINAL_ACTIONS : UTIL_ACTIONS;
+    const c=$(`#${id}`); c.innerHTML='';
+    list.forEach(a=>{
+      const b=document.createElement('button'); b.className='btn'; b.textContent=a.label;
+      b.onclick=async()=>{ await jpost(`${API}/command/run`,{command:a.cmd}); toast(a.label); };
+      c.appendChild(b);
+    });
+  });
+}
+
+/* Monitor */
+function renderMonitor(){
+  const tbl=$('#procTable'); tbl.innerHTML='';
+  /* processes populated in refresh */
+}
+
+/* System refresh */
+function fmtBar(pct){ return Math.max(0,Math.min(100,pct))+'%'; }
+function barClass(pct){ return pct>85?'warn':''; }
 async function refresh(){
   try {
     const s = await jget(`${API}/system/status`);
-    $('#cpu').textContent = s.cpu+'%';
-    $('#ram').textContent = `${s.ram_pct}% (${s.ram_used} / ${s.ram_total})`;
-    $('#disk').textContent = s.disk_pct+'% '+s.disk_used+' / '+s.disk_total;
-    $('#gpu').textContent = s.gpu_pct+'%'+ (s.gpu_temp?' @ '+s.gpu_temp+'C':'');
+    $('#cpu').textContent = s.cpu; $('#cpuBar').style.width = fmtBar(parseFloat(s.cpu)); $('#cpuBar').className='bar '+(parseFloat(s.cpu)>90?'warn':'');
+    $('#ram').textContent = `${s.ram_pct}%`; $('#ramBar').style.width = fmtBar(s.ram_pct); $('#ramBar').className='bar '+(s.ram_pct>90?'warn':'');
+    $('#disk').textContent = `${s.disk_pct}% ${s.disk_used}/${s.disk_total}`; $('#diskBar').style.width = fmtBar(s.disk_pct); $('#diskBar').className='bar '+(s.disk_pct>95?'warn':'');
+    $('#gpu').textContent = `${s.gpu_pct}%` + (s.gpu_temp?` @ ${s.gpu_temp}C`:''); $('#gpuBar').style.width = fmtBar(s.gpu_pct); $('#gpuBar').className='bar '+(s.gpu_temp>85?'warn':'');
     $('#uptime').textContent = s.uptime;
-    $('#temp').textContent = (s.temps||[]).map(t=>`${t.label}:${t.value}${t.unit}`).join(' ') || '—';
     $('#batt').textContent = s.battery;
     $('#users').textContent = s.users;
-    $('#net').textContent = s.network;
+    $('#net').textContent = (s.network||'').split(';').filter(x=>x.trim()&&!x.trim().startsWith('docker')&&!x.trim().startsWith('veth')).join('; ') || '—';
     $('#topcpu').textContent = (s.top_cpu||[]).map(x=>x.name+':'+x.pct+'%').join(' | ') || '—';
     $('#topmem').textContent = (s.top_mem||[]).map(x=>x.name+':'+x.pct+'%').join(' | ') || '—';
+
+    const pt=$('#procTable'); pt.innerHTML='';
+    (s.processes||[]).forEach(p=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${p.pid||''}</td><td>${p.cpu||''}</td><td>${p.mem||''}</td><td>${esc(p.name)}</td>`;
+      pt.appendChild(tr);
+    });
+    $('#netRaw').textContent = s.network || '—';
   } catch(e){}
   setTimeout(refresh, 2000);
 }
 
-$('#lock').onclick=()=>jpost(`${API}/system/lock`); $('#sleep').onclick=()=>jpost(`${API}/system/sleep`); $('#logout').onclick=()=>jpost(`${API}/system/logout`);
-
 (async init=async()=>{
-  renderTabs(); renderMacros(); renderWS([]); renderQuick([]);
+  renderTabs(); renderQuick(); renderWS([]); renderApps(); renderCapture(); renderSys(); renderTools(); renderMonitor();
   refresh();
   try {
     const cfg = await jget(`${API}/config`);
     renderWS(cfg.workspaces);
-    renderQuick(cfg.quick_commands);
   } catch(e){ console.error(e); }
 })();
 </script>
