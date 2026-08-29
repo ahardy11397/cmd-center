@@ -7,51 +7,60 @@
 <style>
   :root { --bg:#06090f; --panel:#0f1525; --muted:#8b9bb4; --fg:#e8edf5; --accent:#00e5ff; --accent2:#b388ff; --danger:#ff5252; --ok:#69f0ae; --warn:#ffd740; --border:#1a243d; }
   * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
-  html,body { height:100%; background:var(--bg); color:var(--fg); font:14px/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,"DejaVu Sans Mono",monospace; overflow:hidden; touch-action:manipulation; }
-  .tabs { display:flex; gap:8px; padding:10px 12px 0; background:linear-gradient(180deg,#0b1020,var(--bg)); position:sticky; top:0; z-index:10; }
-  .tab { padding:10px 14px; border-radius:12px; border:1px solid var(--border); background:var(--panel); color:var(--muted); cursor:pointer; font-weight:700; font-size:12px; letter-spacing:.08em; text-transform:uppercase; }
+  html,body { height:100%; background:var(--bg); color:var(--fg); font:16px/1.3 ui-monospace,SFMono-Regular,Menlo,Consolas,"DejaVu Sans Mono",monospace; overflow:hidden; touch-action:manipulation; }
+  .topbar { display:flex; align-items:center; gap:12px; padding:10px 14px; background:linear-gradient(180deg,#0b1020,var(--bg)); border-bottom:1px solid var(--border); }
+  .title { font-weight:800; font-size:18px; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); }
+  .tabs { display:flex; gap:8px; flex:1; overflow-x:auto; }
+  .tab { padding:10px 14px; border-radius:12px; border:1px solid var(--border); background:var(--panel); color:var(--muted); cursor:pointer; font-weight:700; font-size:12px; letter-spacing:.08em; text-transform:uppercase; white-space:nowrap; text-decoration:none; }
   .tab.active { background:linear-gradient(180deg,#0b2a3d,#0f172a); color:var(--accent); border-color:#0ea5e9; }
-  .view { display:none; height:calc(100% - 46px); overflow:auto; padding:12px; gap:12px; }
+  .view { display:none; height:calc(100% - 52px); overflow:auto; padding:14px; }
   .view.active { display:block; }
-  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  .grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
-  .panel { background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:12px; display:flex; flex-direction:column; gap:8px; }
-  .panel h2 { font-size:10px; text-transform:uppercase; letter-spacing:.18em; color:var(--muted); margin:0; }
-  .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-  .btn { appearance:none; border:1px solid var(--border); background:#0b1220; color:var(--fg); padding:12px 14px; border-radius:12px; cursor:pointer; min-width:44px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; gap:6px; font-weight:700; font-size:12px; letter-spacing:.04em; text-transform:uppercase; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+  .section { display:flex; flex-direction:column; gap:10px; }
+  .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .btn { appearance:none; border:1px solid var(--border); background:#0b1220; color:var(--fg); padding:14px 16px; border-radius:12px; cursor:pointer; min-height:52px; display:inline-flex; align-items:center; justify-content:center; gap:8px; font-weight:700; font-size:13px; letter-spacing:.06em; text-transform:uppercase; text-decoration:none; }
   .btn:active { transform:translateY(1px); filter:brightness(1.3); }
   .btn.accent { background:linear-gradient(180deg,#0ea5e9,#22d3ee); color:#022c22; border-color:#0ea5e9; }
   .btn.danger { background:linear-gradient(180deg,#b91c1c,#ef4444); color:#fff; border-color:#ef4444; }
-  .btn.ok { background:linear-gradient(180deg,#15803d,#22c55e); color:#022c22; border-color:#15803d; }
-  .kv { display:flex; justify-content:space-between; gap:8px; font-size:12px; }
+  .kv { display:flex; justify-content:space-between; gap:10px; font-size:13px; }
   .kv b { color:var(--accent2); font-weight:700; }
-  .stat { background:#0b1220; border:1px solid var(--border); border-radius:10px; padding:8px 10px; display:flex; justify-content:space-between; align-items:center; }
-  .metric { color:var(--accent); font-weight:800; font-size:12px; letter-spacing:.04em; }
+  .stat { background:#0b1220; border:1px solid var(--border); border-radius:12px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; }
+  .metric { color:var(--accent); font-weight:800; font-size:13px; letter-spacing:.04em; }
   .metric.purple { color:var(--accent2); }
-  .bar-wrap { height:6px; background:#0b1220; border-radius:999px; border:1px solid var(--border); overflow:hidden; }
+  .bar-wrap { height:8px; background:#0b1220; border-radius:999px; border:1px solid var(--border); overflow:hidden; }
   .bar { height:100%; border-radius:999px; background:linear-gradient(90deg,#0ea5e9,#22d3ee); width:0%; transition:width .5s; }
   .bar.warn { background:linear-gradient(90deg,#f59e0b,#ef4444); }
   video, audio { width:100%; background:#000; border-radius:10px; border:1px solid var(--border); }
   video#localVideo { transform:scaleX(-1); }
-  #toast { position:fixed; left:50%; bottom:18px; transform:translateX(-50%); background:#0b1220; border:1px solid var(--border); color:var(--fg); padding:10px 14px; border-radius:999px; opacity:0; transition:opacity .2s; pointer-events:none; z-index:50; font-weight:700; font-size:11px; letter-spacing:.06em; text-transform:uppercase; }
+  #toast { position:fixed; left:50%; bottom:20px; transform:translateX(-50%); background:#0b1220; border:1px solid var(--border); color:var(--fg); padding:12px 18px; border-radius:999px; opacity:0; transition:opacity .2s; pointer-events:none; z-index:50; font-weight:700; font-size:12px; letter-spacing:.06em; text-transform:uppercase; }
   #toast.show { opacity:1; }
-  table { width:100%; border-collapse:collapse; font-size:11px; }
-  th,td { text-align:left; padding:6px 4px; border-bottom:1px solid var(--border); }
-  th { color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.1em; font-size:10px; }
-  .section { display:flex; flex-direction:column; gap:6px; }
+  table { width:100%; border-collapse:collapse; font-size:12px; }
+  th,td { text-align:left; padding:8px 6px; border-bottom:1px solid var(--border); }
+  th { color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.1em; font-size:11px; }
   .wrap { overflow:auto; }
-  .empty { color:var(--muted); font-style:italic; font-size:11px; }
-  .terminal-output { background:#070a10; border:1px solid var(--border); border-radius:10px; padding:10px; font-size:11px; color:#a5b4fc; height:140px; overflow:auto; white-space:pre-wrap; word-break:break-all; }
-  .log-btn-row { display:flex; gap:6px; flex-wrap:wrap; }
+  .empty { color:var(--muted); font-style:italic; font-size:12px; }
+  .terminal-output { background:#070a10; border:1px solid var(--border); border-radius:10px; padding:10px; font-size:11px; color:#a5b4fc; height:160px; overflow:auto; white-space:pre-wrap; word-break:break-all; }
+  .group-title { font-size:11px; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); margin:6px 0 4px; }
+  .error { position:fixed; top:0; left:0; right:0; background:#b91c1c; color:#fff; padding:8px; font-size:11px; z-index:9999; display:none; }
 </style>
 </head>
 <body>
-<div class="tabs" id="tabs"></div>
+<div class="error" id="error"></div>
+<div class="topbar">
+  <div class="title">CMD</div>
+  <div class="tabs">
+    <a class="tab active" href="#dashboard">Dashboard</a>
+    <a class="tab" href="#monitor">Monitor</a>
+    <a class="tab" href="#tools">Tools</a>
+    <a class="tab" href="#av">AV</a>
+  </div>
+</div>
 
-<div class="view active grid3" id="dashboard">
-  <div class="panel">
-    <h2>System</h2>
+<div class="view active" id="dashboard">
+  <div class="grid3">
     <div class="section">
+      <div class="group-title">System</div>
       <div class="stat"><span>CPU</span><span class="metric" id="cpu">—</span></div>
       <div class="bar-wrap"><div class="bar" id="cpuBar"></div></div>
       <div class="stat"><span>RAM</span><span class="metric purple" id="ram">—</span></div>
@@ -64,40 +73,62 @@
       <div class="stat"><span>Users</span><span class="metric" id="users">—</span></div>
       <div class="stat"><span>Network</span><span class="metric" id="net">—</span></div>
     </div>
-  </div>
-
-  <div class="panel">
-    <h2>Quick Actions</h2>
-    <div class="section" id="quickActions"></div>
-    <h2 style="margin-top:4px">Terminal</h2>
-    <div class="section" id="terminalPresets"></div>
-    <h2 style="margin-top:4px">Logs</h2>
     <div class="section">
-      <div class="log-btn-row" id="logButtons"></div>
-      <pre id="logView" class="empty terminal-output">Tap a log to view</pre>
-    </div>
-  </div>
-
-  <div class="panel">
-    <h2>Workspace</h2>
-    <div class="section">
-      <div class="row" id="wsButtons"></div>
-    </div>
-    <h2 style="margin-top:4px">Apps</h2>
-    <div class="section" id="apps"></div>
-    <h2 style="margin-top:4px">Media</h2>
-    <div class="section">
+      <div class="group-title">Quick Actions</div>
       <div class="row">
-        <button class="btn" id="prev">⏮</button>
-        <button class="btn accent" id="play">▶</button>
-        <button class="btn" id="pause">⏸</button>
-        <button class="btn" id="next">⏭</button>
+        <a class="btn" href="/apps/terminal">Terminal</a>
+        <a class="btn" href="/apps/files">Files</a>
+        <a class="btn" href="/apps/browser">Browser</a>
+        <a class="btn" href="/apps/editor">Editor</a>
+        <a class="btn" href="/system/lock">Lock</a>
+        <a class="btn" href="/system/sleep">Sleep</a>
+        <a class="btn" href="/system/logout">Logout</a>
+      </div>
+      <div class="group-title">Terminal</div>
+      <div class="row">
+        <form method="post" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- htop"><button class="btn" type="submit">htop</button></form>
+        <form method="post" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- btop"><button class="btn" type="submit">btop</button></form>
+        <form method="post" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'docker ps -a; read'"><button class="btn" type="submit">Docker</button></form>
+        <form method="post" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'ss -tulpn; read'"><button class="btn" type="submit">Netstat</button></form>
+        <form method="post" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'journalctl -p err -n 50 --no-pager; read'"><button class="btn" type="submit">Journal</button></form>
+        <form method="post" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'df -h; read'"><button class="btn" type="submit">Disk</button></form>
+      </div>
+      <div class="group-title">Logs</div>
+      <div class="row">
+        <a class="btn" href="/logs?path=journal&n=120">Journal</a>
+        <a class="btn" href="/logs?path=/var/log/dpkg.log&n=120">Dpkg</a>
+        <a class="btn" href="/logs?path=/var/log/boot.log&n=120">Boot</a>
+        <a class="btn" href="/logs?path=/var/log/lightdm&n=120">LightDM</a>
+      </div>
+      <pre id="logView" class="empty terminal-output">Tap a log above</pre>
+    </div>
+    <div class="section">
+      <div class="group-title">Workspace</div>
+      <div class="row" id="wsButtons">loading</div>
+      <div class="group-title">Apps</div>
+      <div class="row">
+        <form method="post" action="/apps/launch"><input type="hidden" name="command" value="firefox"><button class="btn" type="submit">Firefox</button></form>
+        <form method="post" action="/apps/launch"><input type="hidden" name="command" value="thunar"><button class="btn" type="submit">Files</button></form>
+        <form method="post" action="/apps/launch"><input type="hidden" name="command" value="xfce4-terminal"><button class="btn" type="submit">Terminal</button></form>
+        <form method="post" action="/apps/launch"><input type="hidden" name="command" value="mousepad"><button class="btn" type="submit">Editor</button></form>
+        <form method="post" action="/apps/launch"><input type="hidden" name="command" value="xfce4-calculator"><button class="btn" type="submit">Calc</button></form>
+        <form method="post" action="/apps/launch"><input type="hidden" name="command" value="xfce4-settings-manager"><button class="btn" type="submit">Settings</button></form>
+      </div>
+      <div class="group-title">Media</div>
+      <div class="row">
+        <form method="post" action="/media/prev"><button class="btn" type="submit">Prev</button></form>
+        <form method="post" action="/media/play"><button class="btn accent" type="submit">Play</button></form>
+        <form method="post" action="/media/pause"><button class="btn" type="submit">Pause</button></form>
+        <form method="post" action="/media/next"><button class="btn" type="submit">Next</button></form>
       </div>
       <div class="kv"><span>Vol</span><span class="metric" id="volLabel">50%</span></div>
-      <input type="range" id="volume" min="0" max="100" value="50">
+      <form method="post" action="/media/volume" style="display:flex;gap:10px;align-items:center">
+        <input type="range" name="volume" min="0" max="100" value="50" style="flex:1" oninput="document.getElementById('volLabel').textContent=this.value+'%'">
+        <button class="btn" type="submit">Set</button>
+      </form>
       <div class="row">
-        <button class="btn" id="mute">Mute</button>
-        <button class="btn" id="unmute">Unmute</button>
+        <form method="post" action="/media/mute"><button class="btn" type="submit">Mute</button></form>
+        <form method="post" action="/media/unmute"><button class="btn" type="submit">Unmute</button></form>
       </div>
     </div>
   </div>
@@ -105,8 +136,8 @@
 
 <div class="view" id="monitor">
   <div class="grid2">
-    <div class="panel">
-      <h2>Processes <span id="procCount" style="float:right;color:var(--accent)"></span></h2>
+    <div class="section">
+      <div class="group-title">Processes <span id="procCount" style="float:right;color:var(--accent)"></span></div>
       <div class="wrap" style="flex:1;min-height:0">
         <table>
           <thead><tr><th>PID</th><th>CPU%</th><th>MEM%</th><th>Name</th></tr></thead>
@@ -114,70 +145,101 @@
         </table>
       </div>
     </div>
-    <div class="panel">
-      <h2>Network</h2>
-      <div class="section" id="netInfo"></div>
-      <h2 style="margin-top:4px">Interfaces</h2>
-      <div class="wrap" style="flex:1;min-height:0">
-        <pre id="netRaw" class="terminal-output">Loading…</pre>
-      </div>
+    <div class="section">
+      <div class="group-title">Network</div>
+      <div id="netInfo">loading</div>
+      <div class="group-title">Raw</div>
+      <pre id="netRaw" class="terminal-output">loading</pre>
     </div>
   </div>
 </div>
 
 <div class="view" id="tools">
   <div class="grid2">
-    <div class="panel">
-      <h2>Macros</h2>
-      <div class="section" id="macroGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
-      <h2 style="margin-top:8px">Keyboard Shortcuts</h2>
-      <div class="section" id="shortcuts"></div>
+    <div class="section">
+      <div class="group-title">Macros</div>
+      <div class="row">
+        <form method="post" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'echo === CPU; lscpu | grep Name; echo === RAM; free -h; echo === DISK; df -h /; echo === GPU; nvidia-smi; echo === NET; ip -br addr; read'"><button class="btn" type="submit">Diagnostics</button></form>
+        <form method="post" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'sudo apt update && sudo apt upgrade -y && sudo apt autoremove -y; read'"><button class="btn" type="submit">Updates</button></form>
+        <form method="post" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'docker system prune -af --volumes; read'"><button class="btn" type="submit">Docker Clean</button></form>
+        <form method="post" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'journalctl -p err -n 100 --no-pager; read'"><button class="btn" type="submit">Journal Errors</button></form>
+        <form method="post" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'curl -s https://install.speedtest.net/app/cli/install.deb.sh | sudo bash && speedtest; read'"><button class="btn" type="submit">Speedtest</button></form>
+        <form method="post" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'ping -c 5 8.8.8.8; read'"><button class="btn" type="submit">Ping Google</button></form>
+      </div>
+      <div class="group-title">Shortcuts</div>
+      <div>
+        <div><kbd style="background:#1a243d;border:1px solid var(--border);border-radius:6px;padding:2px 6px;font-size:10px;color:var(--accent);font-weight:700">Ctrl+Alt+T</kbd> Open terminal</div>
+        <div><kbd style="background:#1a243d;border:1px solid var(--border);border-radius:6px;padding:2px 6px;font-size:10px;color:var(--accent);font-weight:700">Ctrl+Alt+L</kbd> Lock screen</div>
+        <div><kbd style="background:#1a243d;border:1px solid var(--border);border-radius:6px;padding:2px 6px;font-size:10px;color:var(--accent);font-weight:700">Alt+F2</kbd> Run command</div>
+        <div><kbd style="background:#1a243d;border:1px solid var(--border);border-radius:6px;padding:2px 6px;font-size:10px;color:var(--accent);font-weight:700">Super+Tab</kbd> Switch workspace</div>
+        <div><kbd style="background:#1a243d;border:1px solid var(--border);border-radius:6px;padding:2px 6px;font-size:10px;color:var(--accent);font-weight:700">Print</kbd> Screenshot</div>
+      </div>
     </div>
-    <div class="panel">
-      <h2>Utilities</h2>
-      <div class="section" id="utilActions"></div>
-      <h2 style="margin-top:8px">System</h2>
-      <div class="section" id="sysActions"></div>
-      <h2 style="margin-top:8px">Capture</h2>
-      <div class="section" id="captureActions"></div>
+    <div class="section">
+      <div class="group-title">Utilities</div>
+      <div class="row">
+        <form method="post" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- htop"><button class="btn" type="submit">htop</button></form>
+        <form method="post" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- btop"><button class="btn" type="submit">btop</button></form>
+        <form method="post" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'ncdu /; read'"><button class="btn" type="submit">ncdu</button></form>
+        <form method="post" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'ping -c 5 8.8.8.8; read'"><button class="btn" type="submit">Ping Google</button></form>
+        <form method="post" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'nmcli dev wifi list; read'"><button class="btn" type="submit">Wifi Scan</button></form>
+        <form method="post" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'nmcli con show; read'"><button class="btn" type="submit">Connections</button></form>
+      </div>
+      <div class="group-title">System</div>
+      <div class="row">
+        <a class="btn" href="/system/lock">Lock</a>
+        <a class="btn" href="/system/sleep">Sleep</a>
+        <a class="btn" href="/system/logout">Logout</a>
+        <a class="btn" href="/system/reboot">Reboot</a>
+        <a class="btn" href="/system/shutdown">Shutdown</a>
+      </div>
+      <div class="group-title">Capture</div>
+      <div class="row">
+        <form method="post" action="/capture/screenshot"><button class="btn" type="submit">Screenshot</button></form>
+        <form method="post" action="/capture/record"><input type="hidden" name="action" value="toggle"><button class="btn" type="submit">Record Start</button></form>
+        <form method="post" action="/capture/record"><input type="hidden" name="action" value="stop"><button class="btn" type="submit">Record Stop</button></form>
+      </div>
     </div>
   </div>
 </div>
 
-<div class="view grid3" id="av">
-  <div class="panel">
-    <h2>Camera / Mic</h2>
+<div class="view" id="av">
+  <div class="grid3">
     <div class="section">
+      <div class="group-title">Camera / Mic</div>
       <div class="kv"><span><b>Cam</b> tablet</span><span id="camState" class="metric" style="color:var(--muted)">off</span></div>
       <div class="kv"><span><b>Mic</b> tablet</span><span id="micState" class="metric" style="color:var(--muted)">off</span></div>
       <div class="row">
-        <button class="btn accent" id="startAV">Start AV</button>
-        <button class="btn danger" id="stopAV">Stop</button>
+        <button class="btn accent" onclick="navigator.mediaDevices.getUserMedia({video:{width:{ideal:1280},height:{ideal:720},frameRate:{ideal:30}},audio:true}).then(function(s){document.getElementById('localVideo').srcObject=s;var c=document.getElementById('camState');if(c){c.textContent='on';c.style.color='var(--ok)';}var m=document.getElementById('micState');if(m){m.textContent='on';m.style.color='var(--ok)';}var t=document.getElementById('toast');if(t){t.textContent='AV on';t.classList.add('show');setTimeout(function(){t.classList.remove('show');},1400);}}).catch(function(){var t=document.getElementById('toast');if(t){t.textContent='AV err';t.classList.add('show');setTimeout(function(){t.classList.remove('show');},1400);}});">Start AV</button>
+        <button class="btn danger" onclick="var s=document.getElementById('localVideo').srcObject;if(s)s.getTracks().forEach(function(t){t.stop();});document.getElementById('localVideo').srcObject=null;var c=document.getElementById('camState');if(c){c.textContent='off';c.style.color='var(--muted)';}var m=document.getElementById('micState');if(m){m.textContent='off';m.style.color='var(--muted)';}var t=document.getElementById('toast');if(t){t.textContent='AV off';t.classList.add('show');setTimeout(function(){t.classList.remove('show');},1400);}">Stop</button>
       </div>
       <video id="localVideo" autoplay playsinline muted></video>
     </div>
-  </div>
-  <div class="panel">
-    <h2>Screen Capture</h2>
     <div class="section">
-      <div class="row" id="captureList"></div>
+      <div class="group-title">Screen Capture</div>
+      <div class="row">
+        <form method="post" action="/capture/screenshot"><button class="btn" type="submit">Screenshot</button></form>
+        <form method="post" action="/capture/record"><input type="hidden" name="action" value="toggle"><button class="btn" type="submit">Record Start</button></form>
+        <form method="post" action="/capture/record"><input type="hidden" name="action" value="stop"><button class="btn" type="submit">Record Stop</button></form>
+      </div>
       <pre id="captureStatus" class="terminal-output">Idle</pre>
     </div>
-  </div>
-  <div class="panel">
-    <h2>Media</h2>
     <div class="section">
+      <div class="group-title">Media</div>
       <div class="row">
-        <button class="btn" id="prev">⏮</button>
-        <button class="btn accent" id="play">▶</button>
-        <button class="btn" id="pause">⏸</button>
-        <button class="btn" id="next">⏭</button>
+        <form method="post" action="/media/prev"><button class="btn" type="submit">Prev</button></form>
+        <form method="post" action="/media/play"><button class="btn accent" type="submit">Play</button></form>
+        <form method="post" action="/media/pause"><button class="btn" type="submit">Pause</button></form>
+        <form method="post" action="/media/next"><button class="btn" type="submit">Next</button></form>
       </div>
-      <div class="kv"><span>Vol</span><span class="metric" id="volLabel">50%</span></div>
-      <input type="range" id="volume" min="0" max="100" value="50">
+      <div class="kv"><span>Vol</span><span class="metric" id="volLabel2">50%</span></div>
+      <form method="post" action="/media/volume" style="display:flex;gap:10px;align-items:center">
+        <input type="range" name="volume" min="0" max="100" value="50" style="flex:1" oninput="document.getElementById('volLabel2').textContent=this.value+'%'">
+        <button class="btn" type="submit">Set</button>
+      </form>
       <div class="row">
-        <button class="btn" id="mute">Mute</button>
-        <button class="btn" id="unmute">Unmute</button>
+        <form method="post" action="/media/mute"><button class="btn" type="submit">Mute</button></form>
+        <form method="post" action="/media/unmute"><button class="btn" type="submit">Unmute</button></form>
       </div>
     </div>
   </div>
@@ -185,263 +247,79 @@
 
 <div id="toast"></div>
 <script>
-const $ = s => document.querySelector(s);
-const API = location.origin;
-const toast = (msg)=>{ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1400); };
-async function jget(url){ try { const r=await fetch(url); if(!r.ok) throw new Error(await r.text()); return await r.json(); } catch(e){ console.error('jget',url,e); throw e; } }
-async function jpost(url,body){ try { const r=await fetch(url,{headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})}); if(!r.ok) throw new Error(await r.text()); return await r.json(); } catch(e){ console.error('jpost',url,e); throw e; } }
-
-const TABS = [
-  {id:'dashboard',label:'Dashboard'},
-  {id:'monitor',label:'Monitor'},
-  {id:'tools',label:'Tools'},
-  {id:'av',label:'AV'},
-];
-let active='dashboard';
-function renderTabs(){
-  const c=$('#tabs'); c.innerHTML='';
-  TABS.forEach(t=>{
-    const b=document.createElement('button'); b.className='tab'+(t.id===active?' active':'');
-    b.textContent=t.label; b.onclick=()=>{
-      active=t.id;
-      document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-      $(`#${t.id}`).classList.add('active');
-      renderTabs();
-    }; c.appendChild(b);
-  });
-}
-
-function action(label,path,body){
-  const b=document.createElement('button'); b.className='btn'; b.textContent=label;
-  b.onclick=async()=>{ try { await jpost(API+path,body); toast(label+' ✓'); } catch(e){ toast(label+' ✗ '+e.message); } };
-  return b;
-}
-
-const QUICK_ACTIONS = [
-  {label:'Terminal',path:'/apps/terminal'},
-  {label:'Files',path:'/apps/files'},
-  {label:'Browser',path:'/apps/browser'},
-  {label:'Editor',path:'/apps/editor'},
-  {label:'Lock',path:'/system/lock'},
-  {label:'Sleep',path:'/system/sleep'},
-  {label:'Logout',path:'/system/logout'},
-];
-function renderQuick(){
-  const c=$('#quickActions'); c.innerHTML='';
-  QUICK_ACTIONS.forEach(a=> c.appendChild(action(a.label,a.path)));
-}
-
-const TERMINAL_PRESETS = [
-  {label:'htop', cmd:'xfce4-terminal -- htop'},
-  {label:'btop', cmd:'xfce4-terminal -- btop'},
-  {label:'Docker', cmd:"xfce4-terminal -- bash -lc 'docker ps -a; read'"},
-  {label:'Netstat', cmd:"xfce4-terminal -- bash -lc 'ss -tulpn; read'"},
-  {label:'Journal', cmd:"xfce4-terminal -- bash -lc 'journalctl -p err -n 50 --no-pager; read'"},
-  {label:'Disk', cmd:"xfce4-terminal -- bash -lc 'df -h; read'"},
-];
-function renderTerminalPresets(){
-  const c=$('#terminalPresets'); c.innerHTML='';
-  TERMINAL_PRESETS.forEach(p=>{
-    const b=document.createElement('button'); b.className='btn'; b.textContent=p.label;
-    b.onclick=async()=>{ try { await jpost(`${API}/command/run`,{command:p.cmd}); toast(p.label); } catch(e){ toast(p.label+' ✗'); } };
-    c.appendChild(b);
-  });
-}
-
-const LOGS = [
-  {label:'Journal', path:'journal'},
-  {label:'Dpkg', path:'/var/log/dpkg.log'},
-  {label:'Boot', path:'/var/log/boot.log'},
-  {label:'LightDM', path:'/var/log/lightdm'},
-];
-function renderLogs(){
-  const c=$('#logButtons'); c.innerHTML='';
-  LOGS.forEach(l=>{
-    const b=document.createElement('button'); b.className='btn'; b.textContent=l.label;
-    b.onclick=async()=>{ try { const r=await jget(`${API}/logs?path=${encodeURIComponent(l.path)}&n=120`); const el=$('#logView'); el.textContent=r.text||'empty'; el.classList.remove('empty'); toast(l.label); } catch(e){ toast('Log error'); } };
-    c.appendChild(b);
-  });
-}
-
-const APPS = [
-  {name:'Firefox',cmd:'firefox'},
-  {name:'Files',cmd:'thunar'},
-  {name:'Terminal',cmd:'xfce4-terminal'},
-  {name:'Editor',cmd:'mousepad'},
-  {name:'Calc',cmd:'xfce4-calculator'},
-  {name:'Settings',cmd:'xfce4-settings-manager'},
-];
-function renderApps(){
-  const c=$('#apps'); c.innerHTML='';
-  APPS.forEach(a=>{
-    const b=document.createElement('button'); b.className='btn'; b.textContent=a.name;
-    b.onclick=async()=>{ try { await jpost(`${API}/apps/launch`,{command:a.cmd}); toast(a.name); } catch(e){ toast(a.name+' ✗'); } };
-    c.appendChild(b);
-  });
-}
-
-const MACROS = [
-  {name:'Diagnostics', cmd:"xfce4-terminal -- bash -lc 'echo === CPU; lscpu | grep Name; echo === RAM; free -h; echo === DISK; df -h /; echo === GPU; nvidia-smi; echo === NET; ip -br addr; read'"},
-  {name:'Updates', cmd:"xfce4-terminal -- bash -lc 'sudo apt update && sudo apt upgrade -y && sudo apt autoremove -y; read'"},
-  {name:'Docker Clean', cmd:"xfce4-terminal -- bash -lc 'docker system prune -af --volumes; read'"},
-  {name:'Journal Errors', cmd:"xfce4-terminal -- bash -lc 'journalctl -p err -n 100 --no-pager; read'"},
-  {name:'Speedtest', cmd:"xfce4-terminal -- bash -lc 'curl -s https://install.speedtest.net/app/cli/install.deb.sh | sudo bash && speedtest; read'"},
-  {name:'Ping Google', cmd:"xfce4-terminal -- bash -lc 'ping -c 5 8.8.8.8; read'"},
-];
-function renderMacros(){
-  const c=$('#macroGrid'); c.innerHTML='';
-  MACROS.forEach(m=>{
-    const b=document.createElement('button'); b.className='btn'; b.textContent=m.name;
-    b.onclick=async()=>{ try { await jpost(`${API}/command/run`,{command:m.cmd}); toast(m.name); } catch(e){ toast(m.name+' ✗'); } };
-    c.appendChild(b);
-  });
-}
-
-const SHORTCUTS = [
-  {keys:'Ctrl+Alt+T', desc:'Open terminal'},
-  {keys:'Ctrl+Alt+L', desc:'Lock screen'},
-  {keys:'Alt+F2', desc:'Run command'},
-  {keys:'Super+Tab', desc:'Switch workspace'},
-  {keys:'Ctrl+Alt+Del', desc:'Logout menu'},
-  {keys:'Print', desc:'Screenshot'},
-  {keys:'Ctrl+Shift+Esc', desc:'Task manager'},
-];
-function renderShortcuts(){
-  const c=$('#shortcuts'); c.innerHTML='';
-  SHORTCUTS.forEach(s=>{
-    const d=document.createElement('div'); d.className='shortcut';
-    d.innerHTML=`<kbd>${s.keys}</kbd> ${s.desc}`;
-    c.appendChild(d);
-  });
-}
-
-const UTIL_ACTIONS = [
-  {label:'htop', cmd:'xfce4-terminal -- htop'},
-  {label:'btop', cmd:'xfce4-terminal -- btop'},
-  {label:'ncdu', cmd:"xfce4-terminal -- bash -lc 'ncdu /; read'"},
-  {label:'Ping Google', cmd:"xfce4-terminal -- bash -lc 'ping -c 5 8.8.8.8; read'"},
-  {label:'Wifi Scan', cmd:"xfce4-terminal -- bash -lc 'nmcli dev wifi list; read'"},
-  {label:'Connections', cmd:"xfce4-terminal -- bash -lc 'nmcli con show; read'"},
-];
-function renderUtils(){
-  const c=$('#utilActions'); c.innerHTML='';
-  UTIL_ACTIONS.forEach(a=>{
-    const b=document.createElement('button'); b.className='btn'; b.textContent=a.label;
-    b.onclick=async()=>{ try { await jpost(`${API}/command/run`,{command:a.cmd}); toast(a.label); } catch(e){ toast(a.label+' ✗'); } };
-    c.appendChild(b);
-  });
-}
-
-const SYS_ACTIONS = [
-  {label:'Lock',path:'/system/lock'},
-  {label:'Sleep',path:'/system/sleep'},
-  {label:'Logout',path:'/system/logout'},
-  {label:'Reboot',path:'/system/reboot'},
-  {label:'Shutdown',path:'/system/shutdown'},
-];
-function renderSys(){
-  const c=$('#sysActions'); c.innerHTML='';
-  SYS_ACTIONS.forEach(s=> c.appendChild(action(s.label,s.path)));
-}
-
-const CAPTURE_ACTIONS = [
-  {label:'Screenshot',path:'/capture/screenshot'},
-  {label:'Record Start',path:'/capture/record',body:{action:'toggle'}},
-  {label:'Record Stop',path:'/capture/record',body:{action:'stop'}},
-];
-function renderCapture(){
-  const c=$('#captureActions'); c.innerHTML='';
-  CAPTURE_ACTIONS.forEach(cap=> c.appendChild(action(cap.label,cap.path,cap.body)));
-}
-
-function renderWS(list){
-  const c=$('#wsButtons'); c.innerHTML='';
-  (list||[]).slice(0,5).forEach(ws=>{
-    const b=document.createElement('button'); b.className='btn'; b.textContent=`WS ${ws.index}`;
-    b.onclick=async()=>{ try { await jpost(`${API}/workspace/switch`,{index:ws.index}); toast('WS '+ws.name); } catch(e){ toast('WS ✗'); } };
-    c.appendChild(b);
-  });
-}
-
-/* AV */
-$('#startAV').onclick=async()=>{
+(function(){
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({video:{width:{ideal:1280},height:{ideal:720},frameRate:{ideal:30}},audio:true});
-    $('#localVideo').srcObject=stream; $('#camState').textContent='on'; $('#camState').style.color='var(--ok)'; $('#micState').textContent='on'; $('#micState').style.color='var(--ok)'; toast('AV on');
-  } catch(e){ toast('AV error: '+e.message); }
-};
-$('#stopAV').onclick=()=>{
-  const s=$('#localVideo').srcObject; if(s) s.getTracks().forEach(t=>t.stop()); $('#localVideo').srcObject=null;
-  $('#camState').textContent='off'; $('#camState').style.color='var(--muted)'; $('#micState').textContent='off'; $('#micState').style.color='var(--muted)'; toast('AV off');
-};
+    var $ = function(s){ return document.querySelector(s); };
+    var API = location.origin;
+    var toast = function(msg){ var t=$('#toast'); if(!t) return; t.textContent=msg; t.classList.add('show'); setTimeout(function(){ t.classList.remove('show'); },1400); };
 
-/* Media controls - wired to visible controls only */
-$('#play').onclick=()=>jpost(`${API}/media/play`).catch(()=>toast('play ✗'));
-$('#pause').onclick=()=>jpost(`${API}/media/pause`).catch(()=>toast('pause ✗'));
-$('#prev').onclick=()=>jpost(`${API}/media/prev`).catch(()=>toast('prev ✗'));
-$('#next').onclick=()=>jpost(`${API}/media/next`).catch(()=>toast('next ✗'));
-$('#mute').onclick=()=>jpost(`${API}/media/mute`).catch(()=>toast('mute ✗'));
-$('#unmute').onclick=()=>jpost(`${API}/media/unmute`).catch(()=>toast('unmute ✗'));
-$('#volume').oninput=async e=>{ try { await jpost(`${API}/media/volume`,{volume:parseInt(e.target.value,10)}); $('#volLabel').textContent=e.target.value+'%'; } catch(err){ toast('vol ✗'); } };
+    function showView(id){
+      var views = document.querySelectorAll('.view');
+      for(var i=0;i<views.length;i++) views[i].classList.remove('active');
+      var el = $('#' + id); if(el) el.classList.add('active');
+      var tabs = document.querySelectorAll('.tab');
+      for(var i=0;i<tabs.length;i++){ tabs[i].classList.toggle('active', tabs[i].getAttribute('href') === '#'+id); }
+    }
+    var tabs = document.querySelectorAll('.tab');
+    for(var i=0;i<tabs.length;i++){
+      tabs[i].addEventListener('click', function(e){
+        e.preventDefault();
+        var href = this.getAttribute('href');
+        if(href && href.charAt(0)==='#') showView(href.substring(1));
+      });
+    }
 
-/* Monitor */
-function refreshMonitor(){
-  jget(`${API}/system/status`).then(s=>{
-    const pt=$('#procTable'); if(!pt) return; pt.innerHTML='';
-    (s.processes||[]).forEach(p=>{
-      const tr=document.createElement('tr');
-      tr.innerHTML=`<td>${p.pid||''}</td><td>${p.cpu||''}</td><td>${p.mem||''}</td><td>${esc(p.name)}</td>`;
-      pt.appendChild(tr);
-    });
-    const pc=$('#procCount'); if(pc) pc.textContent=(s.processes||[]).length+' procs';
-    const nr=$('#netRaw'); if(nr) nr.textContent=s.network||'—';
-    const ni=$('#netInfo'); if(!ni) return; ni.innerHTML='';
-    [
-      {label:'Users', value:s.users},
-      {label:'Uptime', value:s.uptime},
-      {label:'Top CPU', value:(s.top_cpu||[]).map(x=>x.name+':'+x.pct+'%').join(' | ')||'—'},
-      {label:'Top MEM', value:(s.top_mem||[]).map(x=>x.name+':'+x.pct+'%').join(' | ')||'—'},
-    ].forEach(item=>{
-      const d=document.createElement('div'); d.className='kv';
-      d.innerHTML=`<span>${item.label}</span><span class="metric">${esc(item.value)}</span>`;
-      ni.appendChild(d);
-    });
-  }).catch(()=>{});
-}
+    function fmtBar(pct){ return Math.max(0,Math.min(100,pct)) + '%'; }
+    function refresh(){
+      fetch('/system/status').then(function(r){ if(!r.ok) throw new Error(r.statusText); return r.json(); }).then(function(s){
+        var cpu = parseFloat(String(s.cpu||'0').replace('%','')) || 0;
+        var cpuEl = $('#cpu'); if(cpuEl) cpuEl.textContent = s.cpu;
+        var cpuBar = $('#cpuBar'); if(cpuBar){ cpuBar.style.width = fmtBar(cpu); cpuBar.className = 'bar' + (cpu>90?' warn':''); }
+        var ramEl = $('#ram'); if(ramEl) ramEl.textContent = (s.ram_pct||0) + '%';
+        var ramBar = $('#ramBar'); if(ramBar){ ramBar.style.width = fmtBar(s.ram_pct||0); ramBar.className = 'bar' + ((s.ram_pct||0)>90?' warn':''); }
+        var diskEl = $('#disk'); if(diskEl) diskEl.textContent = (s.disk_pct||0) + '% ' + (s.disk_used||'—') + '/' + (s.disk_total||'—');
+        var diskBar = $('#diskBar'); if(diskBar){ diskBar.style.width = fmtBar(s.disk_pct||0); diskBar.className = 'bar' + ((s.disk_pct||0)>95?' warn':''); }
+        var gpuEl = $('#gpu'); if(gpuEl) gpuEl.textContent = (s.gpu_pct||0) + '%' + (s.gpu_temp ? ' @ ' + s.gpu_temp + 'C' : '');
+        var gpuBar = $('#gpuBar'); if(gpuBar){ gpuBar.style.width = fmtBar(s.gpu_pct||0); gpuBar.className = 'bar' + ((s.gpu_temp||0)>85?' warn':''); }
+        var upEl = $('#uptime'); if(upEl) upEl.textContent = s.uptime || '—';
+        var usersEl = $('#users'); if(usersEl) usersEl.textContent = s.users || '—';
+        var netEl = $('#net'); if(netEl) netEl.textContent = (s.network||'—').split(';').filter(function(x){ return x.trim() && !x.trim().startsWith('docker') && !x.trim().startsWith('veth'); }).join('; ') || '—';
+        var pt = $('#procTable'); if(pt){ pt.innerHTML=''; var procs=s.processes||[]; for(var i=0;i<procs.length;i++){ var p=procs[i]; var tr=document.createElement('tr'); tr.innerHTML='<td>'+p.pid+'</td><td>'+p.cpu+'</td><td>'+p.mem+'</td><td>'+p.name+'</td>'; pt.appendChild(tr); } }
+        var pc = $('#procCount'); if(pc) pc.textContent = (s.processes||[]).length + ' procs';
+        var nr = $('#netRaw'); if(nr) nr.textContent = s.network || '—';
+        var ni = $('#netInfo'); if(ni){ ni.innerHTML=''; var rows=[ ['Users',s.users],['Uptime',s.uptime],['Top CPU',(s.top_cpu||[]).map(function(x){return x.name+':'+x.pct+'%';}).join(' | ')||'—'],['Top MEM',(s.top_mem||[]).map(function(x){return x.name+':'+x.pct+'%';}).join(' | ')||'—'] ]; for(var i=0;i<rows.length;i++){ var d=document.createElement('div'); d.className='kv'; d.innerHTML='<span>'+rows[i][0]+'</span><span class="metric">'+rows[i][1]+'</span>'; ni.appendChild(d); } }
+      }).catch(function(e){ var d=$('#error'); if(d){ d.style.display='block'; d.textContent='refresh err: '+e.message; setTimeout(function(){ d.style.display='none'; },3000); } });
+      setTimeout(refresh, 2000);
+    }
 
-function fmtBar(pct){ return Math.max(0,Math.min(100,pct))+'%'; }
-function refresh(){
-  jget(`${API}/system/status`).then(s=>{
-    const cpu=parseFloat(String(s.cpu).replace('%',''))||0;
-    $('#cpu').textContent=s.cpu; $('#cpuBar').style.width=fmtBar(cpu); $('#cpuBar').className='bar'+(cpu>90?' warn':'');
-    $('#ram').textContent=s.ram_pct+'%'; $('#ramBar').style.width=fmtBar(s.ram_pct); $('#ramBar').className='bar'+(s.ram_pct>90?' warn':'');
-    $('#disk').textContent=s.disk_pct+'% '+s.disk_used+'/'+s.disk_total; $('#diskBar').style.width=fmtBar(s.disk_pct); $('#diskBar').className='bar'+(s.disk_pct>95?' warn':'');
-    const gpu=parseFloat(String(s.gpu_pct)); $('#gpu').textContent=s.gpu_pct+'%'+(s.gpu_temp?' @ '+s.gpu_temp+'C':''); $('#gpuBar').style.width=fmtBar(gpu); $('#gpuBar').className='bar'+(s.gpu_temp>85?' warn':'');
-    $('#uptime').textContent=s.uptime;
-    $('#users').textContent=s.users;
-    $('#net').textContent=(s.network||'').split(';').filter(x=>x.trim()&&!x.trim().startsWith('docker')&&!x.trim().startsWith('veth')).join('; ')||'—';
-    refreshMonitor();
-  }).catch(()=>{});
-  setTimeout(refresh, 2000);
-}
+    if(document.readyState === 'loading'){
+      document.addEventListener('DOMContentLoaded', function(){
+        renderWS();
+        refresh();
+      });
+    } else {
+      renderWS();
+      refresh();
+    }
 
-(async init=async()=>{
-  renderTabs();
-  renderQuick();
-  renderTerminalPresets();
-  renderLogs();
-  renderWS([]);
-  renderApps();
-  renderMacros();
-  renderShortcuts();
-  renderUtils();
-  renderSys();
-  renderCapture();
-  refresh();
-  try {
-    const cfg = await jget(`${API}/config`);
-    renderWS(cfg.workspaces);
-  } catch(e){ console.error(e); }
+    function renderWS(){
+      fetch('/config').then(function(r){ if(!r.ok) throw new Error(r.statusText); return r.json(); }).then(function(cfg){
+        var c = $('#wsButtons'); if(!c) return; c.innerHTML = '';
+        var items = cfg.workspaces || [];
+        for(var i=0;i<items.length && i<5;i++){
+          var f = document.createElement('form'); f.method='post'; f.action='/workspace/switch'; f.style.display='inline';
+          var inp = document.createElement('input'); inp.type='hidden'; inp.name='index'; inp.value=items[i].index;
+          var b = document.createElement('button'); b.className='btn'; b.type='submit'; b.textContent='WS '+items[i].index;
+          f.appendChild(inp); f.appendChild(b); c.appendChild(f);
+        }
+      }).catch(function(e){});
+    }
+  } catch(e){
+    var d = document.createElement('div');
+    d.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#ff5252;color:#fff;padding:10px;font-size:12px;z-index:9999;';
+    d.textContent = 'Fatal JS: ' + e.message;
+    document.body.appendChild(d);
+  }
 })();
 </script>
 </body>
