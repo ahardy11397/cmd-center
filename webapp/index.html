@@ -5,44 +5,49 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>CMD Center</title>
 <style>
-  :root { --bg:#0b0f19; --panel:#111827; --panel2:#0f172a; --muted:#94a3b8; --fg:#e2e8f0; --accent:#22d3ee; --accent2:#a78bfa; --danger:#ef4444; --ok:#22c55e; --warn:#f59e0b; --border:#1e293b; }
+  :root { --bg:#07090f; --panel:#0f1525; --panel2:#111c30; --muted:#8b9bb4; --fg:#e8edf5; --accent:#00e5ff; --accent2:#b388ff; --danger:#ff5252; --ok:#69f0ae; --warn:#ffd740; --border:#1a243d; }
   * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
-  html,body { height:100%; background:var(--bg); color:var(--fg); font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",sans-serif; overflow:hidden; touch-action:manipulation; }
-  .tabs { display:flex; gap:6px; padding:10px 12px 0; background:linear-gradient(180deg,#0b1220,var(--bg)); position:sticky; top:0; z-index:10; }
-  .tab { padding:10px 14px; border-radius:999px; border:1px solid var(--border); background:#0b1220; color:var(--muted); cursor:pointer; font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.08em; }
-  .tab.active { background:#0f2a3d; color:var(--accent); border-color:#0ea5e9; }
-  .view { display:none; height:calc(100% - 48px); overflow:auto; padding:12px; gap:12px; }
+  html,body { height:100%; background:var(--bg); color:var(--fg); font:14px/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,"DejaVu Sans Mono",monospace; overflow:hidden; touch-action:manipulation; }
+  .tabs { display:flex; gap:8px; padding:12px 14px 0; background:linear-gradient(180deg,#0b1020,var(--bg)); position:sticky; top:0; z-index:10; }
+  .tab { padding:10px 14px; border-radius:12px; border:1px solid var(--border); background:var(--panel); color:var(--muted); cursor:pointer; font-weight:700; font-size:12px; letter-spacing:.08em; text-transform:uppercase; }
+  .tab.active { background:linear-gradient(180deg,#0b2a3d,#0f172a); color:var(--accent); border-color:#0ea5e9; }
+  .view { display:none; height:calc(100% - 48px); overflow:auto; padding:14px; gap:14px; }
   .view.active { display:grid; }
   .grid2 { grid-template-columns:1fr 1fr; }
   .grid3 { grid-template-columns:1fr 1fr 1fr; }
-  .panel { background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:8px; }
-  .panel h2 { font-size:11px; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); margin:0 0 2px; }
-  .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-  .btn { appearance:none; border:1px solid var(--border); background:#0b1220; color:var(--fg); padding:10px 12px; border-radius:10px; cursor:pointer; min-width:44px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; gap:6px; font-weight:600; font-size:13px; }
-  .btn:active { transform:translateY(1px); filter:brightness(1.2); }
+  .panel { background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:14px; display:flex; flex-direction:column; gap:10px; }
+  .panel h2 { font-size:10px; text-transform:uppercase; letter-spacing:.18em; color:var(--muted); margin:0; }
+  .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .btn { appearance:none; border:1px solid var(--border); background:#0b1220; color:var(--fg); padding:12px 14px; border-radius:12px; cursor:pointer; min-width:48px; min-height:48px; display:inline-flex; align-items:center; justify-content:center; gap:8px; font-weight:700; font-size:12px; letter-spacing:.04em; text-transform:uppercase; }
+  .btn:active { transform:translateY(2px); filter:brightness(1.3); }
   .btn.accent { background:linear-gradient(180deg,#0ea5e9,#22d3ee); color:#022c22; border-color:#0ea5e9; }
   .btn.danger { background:linear-gradient(180deg,#b91c1c,#ef4444); color:#fff; border-color:#ef4444; }
   .btn.ok { background:linear-gradient(180deg,#15803d,#22c55e); color:#022c22; border-color:#15803d; }
   .btn.warn { background:linear-gradient(180deg,#b45309,#f59e0b); color:#1a1000; border-color:#b45309; }
-  .mono { font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; }
-  .kv { display:flex; justify-content:space-between; gap:6px; font-size:13px; }
-  .kv b { color:var(--accent2); font-weight:600; }
-  .stat { background:#0b1220; border:1px solid var(--border); border-radius:10px; padding:10px; display:flex; justify-content:space-between; align-items:center; }
-  .metric { color:var(--accent); font-weight:700; font-size:13px; }
+  .mono { font-family: inherit; }
+  .kv { display:flex; justify-content:space-between; gap:8px; font-size:12px; }
+  .kv b { color:var(--accent2); font-weight:700; }
+  .stat { background:#0b1220; border:1px solid var(--border); border-radius:12px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; }
+  .metric { color:var(--accent); font-weight:800; font-size:13px; letter-spacing:.04em; }
   .metric.purple { color:var(--accent2); }
-  .bar-wrap { height:8px; background:#0b1220; border-radius:999px; border:1px solid var(--border); overflow:hidden; }
-  .bar { height:100%; border-radius:999px; background:linear-gradient(90deg,#0ea5e9,#22d3ee); width:0%; transition:width .4s ease; }
+  .bar-wrap { height:6px; background:#0b1220; border-radius:999px; border:1px solid var(--border); overflow:hidden; }
+  .bar { height:100%; border-radius:999px; background:linear-gradient(90deg,#0ea5e9,#22d3ee); width:0%; transition:width .5s ease; }
   .bar.warn { background:linear-gradient(90deg,#f59e0b,#ef4444); }
-  video, audio { width:100%; background:#000; border-radius:10px; border:1px solid var(--border); }
+  video, audio { width:100%; background:#000; border-radius:12px; border:1px solid var(--border); }
   video#localVideo { transform:scaleX(-1); }
-  #toast { position:fixed; left:50%; bottom:18px; transform:translateX(-50%); background:#0b1220; border:1px solid var(--border); color:var(--fg); padding:10px 14px; border-radius:999px; opacity:0; transition:opacity .2s; pointer-events:none; z-index:50; font-weight:600; }
+  #toast { position:fixed; left:50%; bottom:20px; transform:translateX(-50%); background:#0b1220; border:1px solid var(--border); color:var(--fg); padding:12px 18px; border-radius:999px; opacity:0; transition:opacity .2s; pointer-events:none; z-index:50; font-weight:700; font-size:12px; letter-spacing:.06em; text-transform:uppercase; }
   #toast.show { opacity:1; }
-  table { width:100%; border-collapse:collapse; font-size:12px; }
+  table { width:100%; border-collapse:collapse; font-size:11px; }
   th,td { text-align:left; padding:6px 4px; border-bottom:1px solid var(--border); }
-  th { color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.08em; font-size:11px; }
-  .section { display:flex; flex-direction:column; gap:6px; }
+  th { color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.1em; font-size:10px; }
+  .section { display:flex; flex-direction:column; gap:8px; }
   .wrap { overflow:auto; }
-  .empty { color:var(--muted); font-style:italic; font-size:12px; }
+  .empty { color:var(--muted); font-style:italic; font-size:11px; }
+  .macro-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .shortcut { background:#0b1220; border:1px solid var(--border); border-radius:10px; padding:10px; font-size:11px; }
+  .shortcut kbd { background:#1a243d; border:1px solid var(--border); border-radius:6px; padding:2px 6px; font-size:10px; color:var(--accent); font-weight:700; }
+  .log-controls { display:flex; gap:6px; flex-wrap:wrap; }
+  .terminal-output { background:#070a10; border:1px solid var(--border); border-radius:10px; padding:10px; font-size:11px; color:#a5b4fc; height:160px; overflow:auto; white-space:pre-wrap; word-break:break-all; }
 </style>
 </head>
 <body>
@@ -51,7 +56,7 @@
 <div class="view active grid3" id="dashboard">
   <div class="panel">
     <h2>System</h2>
-    <div class="section" id="sys">
+    <div class="section">
       <div class="stat"><span>CPU</span><span class="metric" id="cpu">—</span></div>
       <div class="bar-wrap"><div class="bar" id="cpuBar"></div></div>
       <div class="stat"><span>RAM</span><span class="metric purple" id="ram">—</span></div>
@@ -61,28 +66,20 @@
       <div class="stat"><span>GPU</span><span class="metric" id="gpu">—</span></div>
       <div class="bar-wrap"><div class="bar" id="gpuBar"></div></div>
       <div class="stat"><span>Uptime</span><span class="metric" id="uptime">—</span></div>
-      <div class="stat"><span>Battery</span><span class="metric" id="batt">—</span></div>
       <div class="stat"><span>Users</span><span class="metric" id="users">—</span></div>
       <div class="stat"><span>Network</span><span class="metric" id="net">—</span></div>
-      <div class="stat"><span>Top CPU</span><span class="metric" id="topcpu">—</span></div>
-      <div class="stat"><span>Top MEM</span><span class="metric" id="topmem">—</span></div>
     </div>
   </div>
 
   <div class="panel">
     <h2>Quick Actions</h2>
-    <div class="section">
-      <div class="row" id="quickActions1"></div>
-      <div class="row" id="quickActions2"></div>
-      <div class="row" id="quickActions3"></div>
-      <div class="row" id="quickActions4"></div>
-    </div>
+    <div class="section" id="quickActions"></div>
+    <h2 style="margin-top:4px">Terminal</h2>
+    <div class="section" id="terminalPresets"></div>
     <h2 style="margin-top:4px">Logs</h2>
     <div class="section">
-      <div class="row" id="logButtons"></div>
-      <div class="wrap" style="flex:1;min-height:0">
-        <pre id="logView" class="empty" style="background:#0b1220;border:1px solid var(--border);border-radius:10px;padding:10px;height:100%;overflow:auto;font-size:11px;color:#cbd5e1">Tap a log to view</pre>
-      </div>
+      <div class="log-controls" id="logButtons"></div>
+      <pre id="logView" class="empty terminal-output">Tap a log</pre>
     </div>
   </div>
 
@@ -101,7 +98,7 @@
         <button class="btn" id="pause">⏸</button>
         <button class="btn" id="next">⏭</button>
       </div>
-      <div class="kv"><span>Volume</span><span id="volLabel">50%</span></div>
+      <div class="kv"><span>Vol</span><span id="volLabel">50%</span></div>
       <input type="range" id="volume" min="0" max="100" value="50">
       <div class="row">
         <button class="btn" id="mute">Mute</button>
@@ -113,7 +110,7 @@
 
 <div class="view grid2" id="monitor">
   <div class="panel">
-    <h2>Processes</h2>
+    <h2>Processes <span id="procCount" style="float:right;color:var(--accent)"></span></h2>
     <div class="wrap" style="flex:1;min-height:0">
       <table>
         <thead><tr><th>PID</th><th>CPU%</th><th>MEM%</th><th>Name</th></tr></thead>
@@ -126,23 +123,25 @@
     <div class="section" id="netInfo"></div>
     <h2 style="margin-top:4px">Interfaces</h2>
     <div class="wrap" style="flex:1;min-height:0">
-      <pre id="netRaw" style="background:#0b1220;border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11px;color:#cbd5e1;overflow:auto;height:100%"></pre>
+      <pre id="netRaw" class="terminal-output">Loading…</pre>
     </div>
   </div>
 </div>
 
 <div class="view grid2" id="tools">
   <div class="panel">
-    <h2>Terminal</h2>
-    <div class="section" id="terminalActions"></div>
-    <h2 style="margin-top:4px">Utilities</h2>
-    <div class="section" id="utilActions"></div>
+    <h2>Macros</h2>
+    <div class="macro-grid" id="macroGrid"></div>
+    <h2 style="margin-top:4px">Keyboard Shortcuts</h2>
+    <div class="section" id="shortcuts"></div>
   </div>
   <div class="panel">
-    <h2>Capture</h2>
-    <div class="section" id="captureActions"></div>
+    <h2>Utilities</h2>
+    <div class="section" id="utilActions"></div>
     <h2 style="margin-top:4px">System</h2>
     <div class="section" id="sysActions"></div>
+    <h2 style="margin-top:4px">Capture</h2>
+    <div class="section" id="captureActions"></div>
   </div>
 </div>
 
@@ -150,33 +149,32 @@
   <div class="panel">
     <h2>Camera / Mic</h2>
     <div class="section">
-      <div class="kv"><span><b>Cam</b> tablet → server</span><span id="camState" class="metric">off</span></div>
-      <div class="kv"><span><b>Mic</b> tablet → server</span><span id="micState" class="metric">off</span></div>
+      <div class="kv"><span><b>Cam</b> tablet</span><span id="camState" class="metric" style="color:var(--muted)">off</span></div>
+      <div class="kv"><span><b>Mic</b> tablet</span><span id="micState" class="metric" style="color:var(--muted)">off</span></div>
       <div class="row">
         <button class="btn accent" id="startAV">Start AV</button>
         <button class="btn danger" id="stopAV">Stop</button>
       </div>
-      <div><video id="localVideo" autoplay playsinline muted></video></div>
-      <div class="kv"><span><b>Remote server audio</b></span><span id="remoteState" class="metric">none</span></div>
+      <video id="localVideo" autoplay playsinline muted></video>
     </div>
   </div>
   <div class="panel">
-    <h2>Screen</h2>
+    <h2>Screen Capture</h2>
     <div class="section">
       <div class="row" id="captureList"></div>
-      <pre id="captureStatus" style="background:#0b1220;border:1px solid var(--border);border-radius:10px;padding:10px;font-size:11px;color:#cbd5e1;height:140px;overflow:auto" class="empty">Idle</pre>
+      <pre id="captureStatus" class="terminal-output">Idle</pre>
     </div>
   </div>
   <div class="panel">
     <h2>Media</h2>
     <div class="section">
       <div class="row">
-        <button class="btn" id="prev">⏮</button>
-        <button class="btn accent" id="play">▶</button>
-        <button class="btn" id="pause">⏸</button>
-        <button class="btn" id="next">⏭</button>
+        <button class="btn" id="prev2">⏮</button>
+        <button class="btn accent" id="play2">▶</button>
+        <button class="btn" id="pause2">⏸</button>
+        <button class="btn" id="next2">⏭</button>
       </div>
-      <div class="kv"><span>Volume</span><span id="volLabel2">50%</span></div>
+      <div class="kv"><span>Vol</span><span id="volLabel2">50%</span></div>
       <input type="range" id="volume2" min="0" max="100" value="50">
       <div class="row">
         <button class="btn" id="mute2">Mute</button>
@@ -217,59 +215,149 @@ function renderTabs(){
 
 function action(label,path,body){
   const b=document.createElement('button'); b.className='btn'; b.textContent=label;
-  b.onclick=async()=>{ try { const r=await jpost(API+path,body); toast(label+' ✓'); } catch(e){ toast(label+' ✗'); } };
+  b.onclick=async()=>{ try { await jpost(API+path,body); toast(label+' ✓'); } catch(e){ toast(label+' ✗'); } };
   return b;
 }
 
-/* Dashboard */
-const QUICK = [
+const QUICK_ACTIONS = [
   {label:'Terminal',path:'/apps/terminal'},
   {label:'Files',path:'/apps/files'},
   {label:'Browser',path:'/apps/browser'},
-  {label:'Text Editor',path:'/apps/editor'},
-  {label:'Screenshot',path:'/capture/screenshot'},
+  {label:'Editor',path:'/apps/editor'},
   {label:'Lock',path:'/system/lock'},
   {label:'Sleep',path:'/system/sleep'},
   {label:'Logout',path:'/system/logout'},
 ];
 function renderQuick(){
-  [['quickActions1','quickActions2','quickActions3','quickActions4'],[]].forEach((arr,idx)=>{
-    const c=$(`#${arr[idx]}`); if(!c) return; c.innerHTML='';
-    QUICK.slice(idx*4,idx*4+4).forEach(q=> c.appendChild(action(q.label,q.path)));
-  });
-  const lc=$('#logButtons'); lc.innerHTML='';
-  ['/var/log/syslog','/var/log/kern.log','/var/log/auth.log','/var/log/dpkg.log','~/.local/share/xorg/Xorg.0.log'].forEach(p=>{
-    const b=document.createElement('button'); b.className='btn'; b.textContent=p.split('/').pop();
-    b.onclick=async()=>{ try { const r=await jget(`${API}/logs?path=${encodeURIComponent(p)}&n=80`); const el=$('#logView'); el.textContent=r.text||'empty'; el.classList.remove('empty'); } catch(e){ toast('Log error'); } };
-    lc.appendChild(b);
-  });
+  const c=$('#quickActions'); c.innerHTML='';
+  QUICK_ACTIONS.forEach(a=> c.appendChild(action(a.label,a.path)));
 }
 
-/* Workspaces */
-function renderWS(list){
-  const c=$('#wsButtons'); c.innerHTML='';
-  (list||[]).slice(0,6).forEach(ws=>{
-    const b=document.createElement('button'); b.className='btn'; b.textContent=`WS ${ws.index}`;
-    b.onclick=async()=>{ await jpost(`${API}/workspace/switch`,{index:ws.index}); toast('WS '+ws.name); };
+const TERMINAL_PRESETS = [
+  {label:'htop', cmd:'xfce4-terminal -- htop'},
+  {label:'btop', cmd:'xfce4-terminal -- btop'},
+  {label:'Docker', cmd:"xfce4-terminal -- bash -lc 'docker ps -a; read'"},
+  {label:'Netstat', cmd:"xfce4-terminal -- bash -lc 'ss -tulpn; read'"},
+  {label:'Journal', cmd:"xfce4-terminal -- bash -lc 'journalctl -p err -n 50 --no-pager; read'"},
+  {label:'Disk', cmd:"xfce4-terminal -- bash -lc 'df -h; read'"},
+];
+function renderTerminalPresets(){
+  const c=$('#terminalPresets'); c.innerHTML='';
+  TERMINAL_PRESETS.forEach(p=>{
+    const b=document.createElement('button'); b.className='btn'; b.textContent=p.label;
+    b.onclick=async()=>{ await jpost(`${API}/command/run`,{command:p.cmd}); toast(p.label); };
     c.appendChild(b);
   });
 }
 
-/* Apps */
+const LOGS = ['/var/log/syslog','/var/log/kern.log','/var/log/auth.log','/var/log/dpkg.log','~/.local/share/xorg/Xorg.0.log'];
+function renderLogs(){
+  const c=$('#logButtons'); c.innerHTML='';
+  LOGS.forEach(p=>{
+    const b=document.createElement('button'); b.className='btn'; b.textContent=PathLabel(p);
+    b.onclick=async()=>{ try { const r=await jget(`${API}/logs?path=${encodeURIComponent(p)}&n=120`); const el=$('#logView'); el.textContent=r.text||'empty'; el.classList.remove('empty'); } catch(e){ toast('Log error'); } };
+    c.appendChild(b);
+  });
+}
+function PathLabel(p){ return p.split('/').pop().replace(/^\./,''); }
+
+const APPS = [
+  {name:'Firefox',cmd:'firefox'},
+  {name:'Files',cmd:'thunar'},
+  {name:'Terminal',cmd:'xfce4-terminal'},
+  {name:'Editor',cmd:'mousepad'},
+  {name:'Calc',cmd:'xfce4-calculator'},
+  {name:'Settings',cmd:'xfce4-settings-manager'},
+];
 function renderApps(){
-  const apps=[
-    {name:'Firefox',cmd:'firefox'},
-    {name:'Files',cmd:'thunar'},
-    {name:'Terminal',cmd:'xfce4-terminal'},
-    {name:'Text Editor',cmd:'mousepad'},
-    {name:'Calculator',cmd:'xfce4-calculator'},
-    {name:'Settings',cmd:'xfce4-settings-manager'},
-    {name:'Docker',cmd:'docker'},
-  ];
   const c=$('#apps'); c.innerHTML='';
-  apps.forEach(a=>{
+  APPS.forEach(a=>{
     const b=document.createElement('button'); b.className='btn'; b.textContent=a.name;
     b.onclick=async()=>{ await jpost(`${API}/apps/launch`,{command:a.cmd}); toast(a.name); };
+    c.appendChild(b);
+  });
+}
+
+const MACROS = [
+  {name:'Diagnostics', cmd:"xfce4-terminal -- bash -lc 'echo === CPU; lscpu | grep Name; echo === RAM; free -h; echo === DISK; df -h /; echo === GPU; nvidia-smi; echo === NET; ip -br addr; read'"},
+  {name:'Updates', cmd:"xfce4-terminal -- bash -lc 'sudo apt update && sudo apt upgrade -y && sudo apt autoremove -y; read'"},
+  {name:'Docker Clean', cmd:"xfce4-terminal -- bash -lc 'docker system prune -af --volumes; read'"},
+  {name:'Rebuild', cmd:"xfce4-terminal -- bash -lc 'sudo apt update && sudo apt upgrade -y && sudo apt dist-upgrade -y && sudo apt autoremove -y && sudo reboot; read'"},
+  {name:'Journal Errors', cmd:"xfce4-terminal -- bash -lc 'journalctl -p err -n 100 --no-pager; read'"},
+  {name:'Speedtest', cmd:"xfce4-terminal -- bash -lc 'curl -s https://install.speedtest.net/app/cli/install.deb.sh | sudo bash && speedtest; read'"},
+];
+function renderMacros(){
+  const c=$('#macroGrid'); c.innerHTML='';
+  MACROS.forEach(m=>{
+    const b=document.createElement('button'); b.className='btn'; b.textContent=m.name;
+    b.onclick=async()=>{ await jpost(`${API}/command/run`,{command:m.cmd}); toast(m.name); };
+    c.appendChild(b);
+  });
+}
+
+const SHORTCUTS = [
+  {keys:'Ctrl+Alt+T', desc:'Open terminal'},
+  {keys:'Ctrl+Alt+L', desc:'Lock screen'},
+  {keys:'Alt+F2', desc:'Run command'},
+  {keys:'Super+Tab', desc:'Switch workspace'},
+  {keys:'Ctrl+Alt+Del', desc:'Logout menu'},
+  {keys:'Print', desc:'Screenshot'},
+  {keys:'Ctrl+Alt+F1-6', desc:'TTY switch'},
+  {keys:'Ctrl+Shift+Q', desc:'Close window'},
+];
+function renderShortcuts(){
+  const c=$('#shortcuts'); c.innerHTML='';
+  SHORTCUTS.forEach(s=>{
+    const d=document.createElement('div'); d.className='shortcut';
+    d.innerHTML=`<kbd>${s.keys}</kbd> ${s.desc}`;
+    c.appendChild(d);
+  });
+}
+
+const UTIL_ACTIONS = [
+  {label:'htop', cmd:'xfce4-terminal -- htop'},
+  {label:'btop', cmd:'xfce4-terminal -- btop'},
+  {label:'ncdu', cmd:"xfce4-terminal -- bash -lc 'ncdu /; read'"},
+  {label:'Ping Google', cmd:"xfce4-terminal -- bash -lc 'ping -c 5 8.8.8.8; read'"},
+  {label:'Wifi Scan', cmd:"xfce4-terminal -- bash -lc 'nmcli dev wifi list; read'"},
+  {label:'Connections', cmd:"xfce4-terminal -- bash -lc 'nmcli con show; read'"},
+];
+function renderUtils(){
+  const c=$('#utilActions'); c.innerHTML='';
+  UTIL_ACTIONS.forEach(a=>{
+    const b=document.createElement('button'); b.className='btn'; b.textContent=a.label;
+    b.onclick=async()=>{ await jpost(`${API}/command/run`,{command:a.cmd}); toast(a.label); };
+    c.appendChild(b);
+  });
+}
+
+const SYS_ACTIONS = [
+  {label:'Lock',path:'/system/lock'},
+  {label:'Sleep',path:'/system/sleep'},
+  {label:'Logout',path:'/system/logout'},
+  {label:'Reboot',path:'/system/reboot'},
+  {label:'Shutdown',path:'/system/shutdown'},
+];
+function renderSys(){
+  const c=$('#sysActions'); c.innerHTML='';
+  SYS_ACTIONS.forEach(s=> c.appendChild(action(s.label,s.path)));
+}
+
+const CAPTURE_ACTIONS = [
+  {label:'Screenshot',path:'/capture/screenshot'},
+  {label:'Record Start',path:'/capture/record',body:{action:'toggle'}},
+  {label:'Record Stop',path:'/capture/record',body:{action:'stop'}},
+];
+function renderCapture(){
+  const c=$('#captureActions'); c.innerHTML='';
+  CAPTURE_ACTIONS.forEach(cap=> c.appendChild(action(cap.label,cap.path,cap.body)));
+}
+
+function renderWS(list){
+  const c=$('#wsButtons'); c.innerHTML='';
+  (list||[]).slice(0,5).forEach(ws=>{
+    const b=document.createElement('button'); b.className='btn'; b.textContent=`WS ${ws.index}`;
+    b.onclick=async()=>{ await jpost(`${API}/workspace/switch`,{index:ws.index}); toast('WS '+ws.name); };
     c.appendChild(b);
   });
 }
@@ -287,75 +375,45 @@ $('#stopAV').onclick=()=>{
 };
 
 /* Media */
-['play','pause','prev','next'].forEach(id=>{
-  $(`#${id}`).onclick=()=>jpost(`${API}/media/${id==='prev'?'prev':id==='next'?'next':id}`);
-});
-['mute','mute2'].forEach(id=>{ $(`#${id}`).onclick=()=>jpost(`${API}/media/mute`); });
-['unmute','unmute2'].forEach(id=>{ $(`#${id}`).onclick=()=>jpost(`${API}/media/unmute`); });
-function bindVolume(id,labelId){
-  $(`#${id}`).oninput=async e=>{ await jpost(`${API}/media/volume`,{volume:parseInt(e.target.value,10)}); $(`#${labelId}`).textContent=e.target.value+'%'; };
+function bindMedia(prefix){
+  $(`#${prefix}play`).onclick=()=>jpost(`${API}/media/play`);
+  $(`#${prefix}pause`).onclick=()=>jpost(`${API}/media/pause`);
+  $(`#${prefix}prev`).onclick=()=>jpost(`${API}/media/prev`);
+  $(`#${prefix}next`).onclick=()=>jpost(`${API}/media/next`);
+  $(`#${prefix}mute`).onclick=()=>jpost(`${API}/media/mute`);
+  $(`#${prefix}unmute`).onclick=()=>jpost(`${API}/media/unmute`);
+  $(`#${prefix}volume`).oninput=async e=>{ await jpost(`${API}/media/volume`,{volume:parseInt(e.target.value,10)}); $(`#volLabel${prefix===''?'':prefix}`).textContent=e.target.value+'%'; };
 }
-bindVolume('volume','volLabel'); bindVolume('volume2','volLabel2');
-
-/* Capture */
-const CAPTURE=[
-  {label:'Screenshot',path:'/capture/screenshot'},
-  {label:'Screen Rec',path:'/capture/record',body:{action:'toggle'}},
-  {label:'Stop Rec',path:'/capture/record',body:{action:'stop'}},
-];
-function renderCapture(){
-  const c=$('#captureList'); c.innerHTML='';
-  CAPTURE.forEach(cap=> c.appendChild(action(cap.label,cap.path,cap.body)));
-}
-
-/* System */
-const SYS_ACTIONS=[
-  {label:'Lock',path:'/system/lock'},
-  {label:'Sleep',path:'/system/sleep'},
-  {label:'Logout',path:'/system/logout'},
-  {label:'Reboot',path:'/system/reboot'},
-  {label:'Shutdown',path:'/system/shutdown'},
-];
-function renderSys(){
-  const c=$('#sysActions'); c.innerHTML='';
-  SYS_ACTIONS.forEach(s=> c.appendChild(action(s.label,s.path)));
-}
-
-/* Terminal & Utils */
-const TERMINAL_ACTIONS=[
-  {label:'htop',cmd:'kitty -- htop || xfce4-terminal -- htop'},
-  {label:'btop',cmd:'kitty -- btop || xfce4-terminal -- btop'},
-  {label:'Docker',cmd:"kitty -- bash -lc 'docker ps -a; read'"},
-  {label:'Netstat',cmd:"kitty -- bash -lc 'ss -tulpn; read'"},
-  {label:'Journal',cmd:"kitty -- bash -lc 'journalctl -p err -n 50 --no-pager; read'"},
-];
-const UTIL_ACTIONS=[
-  {label:'Ping Google',cmd:"kitty -- bash -lc 'ping -c 5 8.8.8.8; read'"},
-  {label:'Speedtest',cmd:"kitty -- bash -lc 'curl -s https://install.speedtest.net/app/cli/install.deb.sh | sudo bash && speedtest; read'"},
-  {label:'Update',cmd:"kitty -- bash -lc 'sudo apt update && sudo apt upgrade -y; read'"},
-  {label:'Disk Usage',cmd:"kitty -- bash -lc 'ncdu /; read'"},
-  {label:'NM Connections',cmd:"kitty -- bash -lc 'nmcli con show; read'"},
-  {label:'Wifi Scan',cmd:"kitty -- bash -lc 'nmcli dev wifi list; read'"},
-];
-function renderTools(){
-  ['terminalActions','utilActions'].forEach((id,idx)=>{
-    const list= idx===0 ? TERMINAL_ACTIONS : UTIL_ACTIONS;
-    const c=$(`#${id}`); c.innerHTML='';
-    list.forEach(a=>{
-      const b=document.createElement('button'); b.className='btn'; b.textContent=a.label;
-      b.onclick=async()=>{ await jpost(`${API}/command/run`,{command:a.cmd}); toast(a.label); };
-      c.appendChild(b);
-    });
-  });
-}
+bindMedia(''); bindMedia('2');
 
 /* Monitor */
-function renderMonitor(){
-  const tbl=$('#procTable'); tbl.innerHTML='';
-  /* processes populated in refresh */
+async function refreshMonitor(){
+  try {
+    const s = await jget(`${API}/system/status`);
+    const pt=$('#procTable'); pt.innerHTML='';
+    (s.processes||[]).forEach(p=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${p.pid||''}</td><td>${p.cpu||''}</td><td>${p.mem||''}</td><td>${esc(p.name)}</td>`;
+      pt.appendChild(tr);
+    });
+    $('#procCount').textContent = (s.processes||[]).length + ' procs';
+    $('#netRaw').textContent = s.network || '—';
+    const ni=$('#netInfo'); ni.innerHTML='';
+    const niData = [
+      {label:'Users', value:s.users},
+      {label:'Uptime', value:s.uptime},
+      {label:'Top CPU', value:(s.top_cpu||[]).map(x=>x.name+':'+x.pct+'%').join(' | ') || '—'},
+      {label:'Top MEM', value:(s.top_mem||[]).map(x=>x.name+':'+x.pct+'%').join(' | ') || '—'},
+    ];
+    niData.forEach(item=>{
+      const d=document.createElement('div'); d.className='kv';
+      d.innerHTML=`<span>${item.label}</span><span class="metric">${esc(item.value)}</span>`;
+      ni.appendChild(d);
+    });
+  } catch(e){}
 }
 
-/* System refresh */
+/* Dashboard refresh */
 function fmtBar(pct){ return Math.max(0,Math.min(100,pct))+'%'; }
 function barClass(pct){ return pct>85?'warn':''; }
 async function refresh(){
@@ -366,25 +424,25 @@ async function refresh(){
     $('#disk').textContent = `${s.disk_pct}% ${s.disk_used}/${s.disk_total}`; $('#diskBar').style.width = fmtBar(s.disk_pct); $('#diskBar').className='bar '+(s.disk_pct>95?'warn':'');
     $('#gpu').textContent = `${s.gpu_pct}%` + (s.gpu_temp?` @ ${s.gpu_temp}C`:''); $('#gpuBar').style.width = fmtBar(s.gpu_pct); $('#gpuBar').className='bar '+(s.gpu_temp>85?'warn':'');
     $('#uptime').textContent = s.uptime;
-    $('#batt').textContent = s.battery;
     $('#users').textContent = s.users;
     $('#net').textContent = (s.network||'').split(';').filter(x=>x.trim()&&!x.trim().startsWith('docker')&&!x.trim().startsWith('veth')).join('; ') || '—';
-    $('#topcpu').textContent = (s.top_cpu||[]).map(x=>x.name+':'+x.pct+'%').join(' | ') || '—';
-    $('#topmem').textContent = (s.top_mem||[]).map(x=>x.name+':'+x.pct+'%').join(' | ') || '—';
-
-    const pt=$('#procTable'); pt.innerHTML='';
-    (s.processes||[]).forEach(p=>{
-      const tr=document.createElement('tr');
-      tr.innerHTML=`<td>${p.pid||''}</td><td>${p.cpu||''}</td><td>${p.mem||''}</td><td>${esc(p.name)}</td>`;
-      pt.appendChild(tr);
-    });
-    $('#netRaw').textContent = s.network || '—';
+    refreshMonitor();
   } catch(e){}
   setTimeout(refresh, 2000);
 }
 
 (async init=async()=>{
-  renderTabs(); renderQuick(); renderWS([]); renderApps(); renderCapture(); renderSys(); renderTools(); renderMonitor();
+  renderTabs();
+  renderQuick();
+  renderTerminalPresets();
+  renderLogs();
+  renderWS([]);
+  renderApps();
+  renderMacros();
+  renderShortcuts();
+  renderUtils();
+  renderSys();
+  renderCapture();
   refresh();
   try {
     const cfg = await jget(`${API}/config`);

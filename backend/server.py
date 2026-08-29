@@ -1,8 +1,8 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import subprocess, json, asyncio, re
+import subprocess, json, asyncio, re, uuid, time
 from pathlib import Path
 from datetime import datetime
 
@@ -36,6 +36,12 @@ class VolumeRequest(BaseModel):
 
 class CaptureRequest(BaseModel):
     action: str = "screenshot"
+
+class TerminalRequest(BaseModel):
+    command: str
+    session_id: str = ""
+
+TERMINAL_SESSIONS = {}
 
 @app.get("/", response_class=HTMLResponse)
 async def index():
@@ -108,6 +114,13 @@ async def command_run(req: CommandRequest):
         return JSONResponse({"ok": False, "error": "command not allowed"}, status_code=400)
     asyncio.get_event_loop().run_in_executor(None, lambda: subprocess.Popen(cmd, shell=True, start_new_session=True))
     return JSONResponse({"ok": True})
+
+@app.post("/terminal/start")
+async def terminal_start(req: TerminalRequest):
+    sid = str(uuid.uuid4())
+    TERMINAL_SESSIONS[sid] = {"cmd": req.command, "started": time.time()}
+    asyncio.get_event_loop().run_in_executor(None, lambda: subprocess.Popen(req.command, shell=True, start_new_session=True))
+    return JSONResponse({"ok": True, "session_id": sid})
 
 @app.get("/logs")
 async def logs(path: str = "/var/log/syslog", n: int = 80):
