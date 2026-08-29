@@ -124,6 +124,12 @@ async def terminal_start(req: TerminalRequest):
 
 @app.get("/logs")
 async def logs(path: str = "/var/log/syslog", n: int = 80):
+    if path == "journal":
+        try:
+            out = subprocess.check_output(["journalctl","-n", str(max(1,n)), "--no-pager","-o","short-iso"], text=True)
+            return JSONResponse({"text": out})
+        except Exception as e:
+            return JSONResponse({"text": str(e)}, status_code=500)
     p = Path(path).expanduser()
     if not p.exists() or not p.is_file():
         return JSONResponse({"text": "log not found"}, status_code=404)

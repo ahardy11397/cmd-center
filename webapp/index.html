@@ -5,49 +5,44 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>CMD Center</title>
 <style>
-  :root { --bg:#07090f; --panel:#0f1525; --panel2:#111c30; --muted:#8b9bb4; --fg:#e8edf5; --accent:#00e5ff; --accent2:#b388ff; --danger:#ff5252; --ok:#69f0ae; --warn:#ffd740; --border:#1a243d; }
+  :root { --bg:#06090f; --panel:#0f1525; --muted:#8b9bb4; --fg:#e8edf5; --accent:#00e5ff; --accent2:#b388ff; --danger:#ff5252; --ok:#69f0ae; --warn:#ffd740; --border:#1a243d; }
   * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
   html,body { height:100%; background:var(--bg); color:var(--fg); font:14px/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,"DejaVu Sans Mono",monospace; overflow:hidden; touch-action:manipulation; }
-  .tabs { display:flex; gap:8px; padding:12px 14px 0; background:linear-gradient(180deg,#0b1020,var(--bg)); position:sticky; top:0; z-index:10; }
+  .tabs { display:flex; gap:8px; padding:10px 12px 0; background:linear-gradient(180deg,#0b1020,var(--bg)); position:sticky; top:0; z-index:10; }
   .tab { padding:10px 14px; border-radius:12px; border:1px solid var(--border); background:var(--panel); color:var(--muted); cursor:pointer; font-weight:700; font-size:12px; letter-spacing:.08em; text-transform:uppercase; }
   .tab.active { background:linear-gradient(180deg,#0b2a3d,#0f172a); color:var(--accent); border-color:#0ea5e9; }
-  .view { display:none; height:calc(100% - 48px); overflow:auto; padding:14px; gap:14px; }
-  .view.active { display:grid; }
-  .grid2 { grid-template-columns:1fr 1fr; }
-  .grid3 { grid-template-columns:1fr 1fr 1fr; }
-  .panel { background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:14px; display:flex; flex-direction:column; gap:10px; }
+  .view { display:none; height:calc(100% - 46px); overflow:auto; padding:12px; gap:12px; }
+  .view.active { display:block; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+  .panel { background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:12px; display:flex; flex-direction:column; gap:8px; }
   .panel h2 { font-size:10px; text-transform:uppercase; letter-spacing:.18em; color:var(--muted); margin:0; }
-  .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-  .btn { appearance:none; border:1px solid var(--border); background:#0b1220; color:var(--fg); padding:12px 14px; border-radius:12px; cursor:pointer; min-width:48px; min-height:48px; display:inline-flex; align-items:center; justify-content:center; gap:8px; font-weight:700; font-size:12px; letter-spacing:.04em; text-transform:uppercase; }
-  .btn:active { transform:translateY(2px); filter:brightness(1.3); }
+  .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .btn { appearance:none; border:1px solid var(--border); background:#0b1220; color:var(--fg); padding:12px 14px; border-radius:12px; cursor:pointer; min-width:44px; min-height:44px; display:inline-flex; align-items:center; justify-content:center; gap:6px; font-weight:700; font-size:12px; letter-spacing:.04em; text-transform:uppercase; }
+  .btn:active { transform:translateY(1px); filter:brightness(1.3); }
   .btn.accent { background:linear-gradient(180deg,#0ea5e9,#22d3ee); color:#022c22; border-color:#0ea5e9; }
   .btn.danger { background:linear-gradient(180deg,#b91c1c,#ef4444); color:#fff; border-color:#ef4444; }
   .btn.ok { background:linear-gradient(180deg,#15803d,#22c55e); color:#022c22; border-color:#15803d; }
-  .btn.warn { background:linear-gradient(180deg,#b45309,#f59e0b); color:#1a1000; border-color:#b45309; }
-  .mono { font-family: inherit; }
   .kv { display:flex; justify-content:space-between; gap:8px; font-size:12px; }
   .kv b { color:var(--accent2); font-weight:700; }
-  .stat { background:#0b1220; border:1px solid var(--border); border-radius:12px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; }
-  .metric { color:var(--accent); font-weight:800; font-size:13px; letter-spacing:.04em; }
+  .stat { background:#0b1220; border:1px solid var(--border); border-radius:10px; padding:8px 10px; display:flex; justify-content:space-between; align-items:center; }
+  .metric { color:var(--accent); font-weight:800; font-size:12px; letter-spacing:.04em; }
   .metric.purple { color:var(--accent2); }
   .bar-wrap { height:6px; background:#0b1220; border-radius:999px; border:1px solid var(--border); overflow:hidden; }
-  .bar { height:100%; border-radius:999px; background:linear-gradient(90deg,#0ea5e9,#22d3ee); width:0%; transition:width .5s ease; }
+  .bar { height:100%; border-radius:999px; background:linear-gradient(90deg,#0ea5e9,#22d3ee); width:0%; transition:width .5s; }
   .bar.warn { background:linear-gradient(90deg,#f59e0b,#ef4444); }
-  video, audio { width:100%; background:#000; border-radius:12px; border:1px solid var(--border); }
+  video, audio { width:100%; background:#000; border-radius:10px; border:1px solid var(--border); }
   video#localVideo { transform:scaleX(-1); }
-  #toast { position:fixed; left:50%; bottom:20px; transform:translateX(-50%); background:#0b1220; border:1px solid var(--border); color:var(--fg); padding:12px 18px; border-radius:999px; opacity:0; transition:opacity .2s; pointer-events:none; z-index:50; font-weight:700; font-size:12px; letter-spacing:.06em; text-transform:uppercase; }
+  #toast { position:fixed; left:50%; bottom:18px; transform:translateX(-50%); background:#0b1220; border:1px solid var(--border); color:var(--fg); padding:10px 14px; border-radius:999px; opacity:0; transition:opacity .2s; pointer-events:none; z-index:50; font-weight:700; font-size:11px; letter-spacing:.06em; text-transform:uppercase; }
   #toast.show { opacity:1; }
   table { width:100%; border-collapse:collapse; font-size:11px; }
   th,td { text-align:left; padding:6px 4px; border-bottom:1px solid var(--border); }
   th { color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.1em; font-size:10px; }
-  .section { display:flex; flex-direction:column; gap:8px; }
+  .section { display:flex; flex-direction:column; gap:6px; }
   .wrap { overflow:auto; }
   .empty { color:var(--muted); font-style:italic; font-size:11px; }
-  .macro-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-  .shortcut { background:#0b1220; border:1px solid var(--border); border-radius:10px; padding:10px; font-size:11px; }
-  .shortcut kbd { background:#1a243d; border:1px solid var(--border); border-radius:6px; padding:2px 6px; font-size:10px; color:var(--accent); font-weight:700; }
-  .log-controls { display:flex; gap:6px; flex-wrap:wrap; }
-  .terminal-output { background:#070a10; border:1px solid var(--border); border-radius:10px; padding:10px; font-size:11px; color:#a5b4fc; height:160px; overflow:auto; white-space:pre-wrap; word-break:break-all; }
+  .terminal-output { background:#070a10; border:1px solid var(--border); border-radius:10px; padding:10px; font-size:11px; color:#a5b4fc; height:140px; overflow:auto; white-space:pre-wrap; word-break:break-all; }
+  .log-btn-row { display:flex; gap:6px; flex-wrap:wrap; }
 </style>
 </head>
 <body>
@@ -78,8 +73,8 @@
     <div class="section" id="terminalPresets"></div>
     <h2 style="margin-top:4px">Logs</h2>
     <div class="section">
-      <div class="log-controls" id="logButtons"></div>
-      <pre id="logView" class="empty terminal-output">Tap a log</pre>
+      <div class="log-btn-row" id="logButtons"></div>
+      <pre id="logView" class="empty terminal-output">Tap a log to view</pre>
     </div>
   </div>
 
@@ -98,7 +93,7 @@
         <button class="btn" id="pause">⏸</button>
         <button class="btn" id="next">⏭</button>
       </div>
-      <div class="kv"><span>Vol</span><span id="volLabel">50%</span></div>
+      <div class="kv"><span>Vol</span><span class="metric" id="volLabel">50%</span></div>
       <input type="range" id="volume" min="0" max="100" value="50">
       <div class="row">
         <button class="btn" id="mute">Mute</button>
@@ -108,40 +103,44 @@
   </div>
 </div>
 
-<div class="view grid2" id="monitor">
-  <div class="panel">
-    <h2>Processes <span id="procCount" style="float:right;color:var(--accent)"></span></h2>
-    <div class="wrap" style="flex:1;min-height:0">
-      <table>
-        <thead><tr><th>PID</th><th>CPU%</th><th>MEM%</th><th>Name</th></tr></thead>
-        <tbody id="procTable"></tbody>
-      </table>
+<div class="view" id="monitor">
+  <div class="grid2">
+    <div class="panel">
+      <h2>Processes <span id="procCount" style="float:right;color:var(--accent)"></span></h2>
+      <div class="wrap" style="flex:1;min-height:0">
+        <table>
+          <thead><tr><th>PID</th><th>CPU%</th><th>MEM%</th><th>Name</th></tr></thead>
+          <tbody id="procTable"></tbody>
+        </table>
+      </div>
     </div>
-  </div>
-  <div class="panel">
-    <h2>Network</h2>
-    <div class="section" id="netInfo"></div>
-    <h2 style="margin-top:4px">Interfaces</h2>
-    <div class="wrap" style="flex:1;min-height:0">
-      <pre id="netRaw" class="terminal-output">Loading…</pre>
+    <div class="panel">
+      <h2>Network</h2>
+      <div class="section" id="netInfo"></div>
+      <h2 style="margin-top:4px">Interfaces</h2>
+      <div class="wrap" style="flex:1;min-height:0">
+        <pre id="netRaw" class="terminal-output">Loading…</pre>
+      </div>
     </div>
   </div>
 </div>
 
-<div class="view grid2" id="tools">
-  <div class="panel">
-    <h2>Macros</h2>
-    <div class="macro-grid" id="macroGrid"></div>
-    <h2 style="margin-top:4px">Keyboard Shortcuts</h2>
-    <div class="section" id="shortcuts"></div>
-  </div>
-  <div class="panel">
-    <h2>Utilities</h2>
-    <div class="section" id="utilActions"></div>
-    <h2 style="margin-top:4px">System</h2>
-    <div class="section" id="sysActions"></div>
-    <h2 style="margin-top:4px">Capture</h2>
-    <div class="section" id="captureActions"></div>
+<div class="view" id="tools">
+  <div class="grid2">
+    <div class="panel">
+      <h2>Macros</h2>
+      <div class="section" id="macroGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
+      <h2 style="margin-top:8px">Keyboard Shortcuts</h2>
+      <div class="section" id="shortcuts"></div>
+    </div>
+    <div class="panel">
+      <h2>Utilities</h2>
+      <div class="section" id="utilActions"></div>
+      <h2 style="margin-top:8px">System</h2>
+      <div class="section" id="sysActions"></div>
+      <h2 style="margin-top:8px">Capture</h2>
+      <div class="section" id="captureActions"></div>
+    </div>
   </div>
 </div>
 
@@ -169,16 +168,16 @@
     <h2>Media</h2>
     <div class="section">
       <div class="row">
-        <button class="btn" id="prev2">⏮</button>
-        <button class="btn accent" id="play2">▶</button>
-        <button class="btn" id="pause2">⏸</button>
-        <button class="btn" id="next2">⏭</button>
+        <button class="btn" id="prev">⏮</button>
+        <button class="btn accent" id="play">▶</button>
+        <button class="btn" id="pause">⏸</button>
+        <button class="btn" id="next">⏭</button>
       </div>
-      <div class="kv"><span>Vol</span><span id="volLabel2">50%</span></div>
-      <input type="range" id="volume2" min="0" max="100" value="50">
+      <div class="kv"><span>Vol</span><span class="metric" id="volLabel">50%</span></div>
+      <input type="range" id="volume" min="0" max="100" value="50">
       <div class="row">
-        <button class="btn" id="mute2">Mute</button>
-        <button class="btn" id="unmute2">Unmute</button>
+        <button class="btn" id="mute">Mute</button>
+        <button class="btn" id="unmute">Unmute</button>
       </div>
     </div>
   </div>
@@ -189,9 +188,8 @@
 const $ = s => document.querySelector(s);
 const API = location.origin;
 const toast = (msg)=>{ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1400); };
-async function jget(url){ const r=await fetch(url); if(!r.ok) throw new Error(await r.text()); return r.json(); }
-async function jpost(url,body){ const r=await fetch(url,{headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})}); if(!r.ok) throw new Error(await r.text()); return r.json(); }
-function esc(s){return String(s).replace(/[&<>"']/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]))}
+async function jget(url){ try { const r=await fetch(url); if(!r.ok) throw new Error(await r.text()); return await r.json(); } catch(e){ console.error('jget',url,e); throw e; } }
+async function jpost(url,body){ try { const r=await fetch(url,{headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})}); if(!r.ok) throw new Error(await r.text()); return await r.json(); } catch(e){ console.error('jpost',url,e); throw e; } }
 
 const TABS = [
   {id:'dashboard',label:'Dashboard'},
@@ -215,7 +213,7 @@ function renderTabs(){
 
 function action(label,path,body){
   const b=document.createElement('button'); b.className='btn'; b.textContent=label;
-  b.onclick=async()=>{ try { await jpost(API+path,body); toast(label+' ✓'); } catch(e){ toast(label+' ✗'); } };
+  b.onclick=async()=>{ try { await jpost(API+path,body); toast(label+' ✓'); } catch(e){ toast(label+' ✗ '+e.message); } };
   return b;
 }
 
@@ -245,21 +243,25 @@ function renderTerminalPresets(){
   const c=$('#terminalPresets'); c.innerHTML='';
   TERMINAL_PRESETS.forEach(p=>{
     const b=document.createElement('button'); b.className='btn'; b.textContent=p.label;
-    b.onclick=async()=>{ await jpost(`${API}/command/run`,{command:p.cmd}); toast(p.label); };
+    b.onclick=async()=>{ try { await jpost(`${API}/command/run`,{command:p.cmd}); toast(p.label); } catch(e){ toast(p.label+' ✗'); } };
     c.appendChild(b);
   });
 }
 
-const LOGS = ['/var/log/syslog','/var/log/kern.log','/var/log/auth.log','/var/log/dpkg.log','~/.local/share/xorg/Xorg.0.log'];
+const LOGS = [
+  {label:'Journal', path:'journal'},
+  {label:'Dpkg', path:'/var/log/dpkg.log'},
+  {label:'Boot', path:'/var/log/boot.log'},
+  {label:'LightDM', path:'/var/log/lightdm'},
+];
 function renderLogs(){
   const c=$('#logButtons'); c.innerHTML='';
-  LOGS.forEach(p=>{
-    const b=document.createElement('button'); b.className='btn'; b.textContent=PathLabel(p);
-    b.onclick=async()=>{ try { const r=await jget(`${API}/logs?path=${encodeURIComponent(p)}&n=120`); const el=$('#logView'); el.textContent=r.text||'empty'; el.classList.remove('empty'); } catch(e){ toast('Log error'); } };
+  LOGS.forEach(l=>{
+    const b=document.createElement('button'); b.className='btn'; b.textContent=l.label;
+    b.onclick=async()=>{ try { const r=await jget(`${API}/logs?path=${encodeURIComponent(l.path)}&n=120`); const el=$('#logView'); el.textContent=r.text||'empty'; el.classList.remove('empty'); toast(l.label); } catch(e){ toast('Log error'); } };
     c.appendChild(b);
   });
 }
-function PathLabel(p){ return p.split('/').pop().replace(/^\./,''); }
 
 const APPS = [
   {name:'Firefox',cmd:'firefox'},
@@ -273,7 +275,7 @@ function renderApps(){
   const c=$('#apps'); c.innerHTML='';
   APPS.forEach(a=>{
     const b=document.createElement('button'); b.className='btn'; b.textContent=a.name;
-    b.onclick=async()=>{ await jpost(`${API}/apps/launch`,{command:a.cmd}); toast(a.name); };
+    b.onclick=async()=>{ try { await jpost(`${API}/apps/launch`,{command:a.cmd}); toast(a.name); } catch(e){ toast(a.name+' ✗'); } };
     c.appendChild(b);
   });
 }
@@ -282,15 +284,15 @@ const MACROS = [
   {name:'Diagnostics', cmd:"xfce4-terminal -- bash -lc 'echo === CPU; lscpu | grep Name; echo === RAM; free -h; echo === DISK; df -h /; echo === GPU; nvidia-smi; echo === NET; ip -br addr; read'"},
   {name:'Updates', cmd:"xfce4-terminal -- bash -lc 'sudo apt update && sudo apt upgrade -y && sudo apt autoremove -y; read'"},
   {name:'Docker Clean', cmd:"xfce4-terminal -- bash -lc 'docker system prune -af --volumes; read'"},
-  {name:'Rebuild', cmd:"xfce4-terminal -- bash -lc 'sudo apt update && sudo apt upgrade -y && sudo apt dist-upgrade -y && sudo apt autoremove -y && sudo reboot; read'"},
   {name:'Journal Errors', cmd:"xfce4-terminal -- bash -lc 'journalctl -p err -n 100 --no-pager; read'"},
   {name:'Speedtest', cmd:"xfce4-terminal -- bash -lc 'curl -s https://install.speedtest.net/app/cli/install.deb.sh | sudo bash && speedtest; read'"},
+  {name:'Ping Google', cmd:"xfce4-terminal -- bash -lc 'ping -c 5 8.8.8.8; read'"},
 ];
 function renderMacros(){
   const c=$('#macroGrid'); c.innerHTML='';
   MACROS.forEach(m=>{
     const b=document.createElement('button'); b.className='btn'; b.textContent=m.name;
-    b.onclick=async()=>{ await jpost(`${API}/command/run`,{command:m.cmd}); toast(m.name); };
+    b.onclick=async()=>{ try { await jpost(`${API}/command/run`,{command:m.cmd}); toast(m.name); } catch(e){ toast(m.name+' ✗'); } };
     c.appendChild(b);
   });
 }
@@ -302,8 +304,7 @@ const SHORTCUTS = [
   {keys:'Super+Tab', desc:'Switch workspace'},
   {keys:'Ctrl+Alt+Del', desc:'Logout menu'},
   {keys:'Print', desc:'Screenshot'},
-  {keys:'Ctrl+Alt+F1-6', desc:'TTY switch'},
-  {keys:'Ctrl+Shift+Q', desc:'Close window'},
+  {keys:'Ctrl+Shift+Esc', desc:'Task manager'},
 ];
 function renderShortcuts(){
   const c=$('#shortcuts'); c.innerHTML='';
@@ -326,7 +327,7 @@ function renderUtils(){
   const c=$('#utilActions'); c.innerHTML='';
   UTIL_ACTIONS.forEach(a=>{
     const b=document.createElement('button'); b.className='btn'; b.textContent=a.label;
-    b.onclick=async()=>{ await jpost(`${API}/command/run`,{command:a.cmd}); toast(a.label); };
+    b.onclick=async()=>{ try { await jpost(`${API}/command/run`,{command:a.cmd}); toast(a.label); } catch(e){ toast(a.label+' ✗'); } };
     c.appendChild(b);
   });
 }
@@ -357,7 +358,7 @@ function renderWS(list){
   const c=$('#wsButtons'); c.innerHTML='';
   (list||[]).slice(0,5).forEach(ws=>{
     const b=document.createElement('button'); b.className='btn'; b.textContent=`WS ${ws.index}`;
-    b.onclick=async()=>{ await jpost(`${API}/workspace/switch`,{index:ws.index}); toast('WS '+ws.name); };
+    b.onclick=async()=>{ try { await jpost(`${API}/workspace/switch`,{index:ws.index}); toast('WS '+ws.name); } catch(e){ toast('WS ✗'); } };
     c.appendChild(b);
   });
 }
@@ -374,60 +375,53 @@ $('#stopAV').onclick=()=>{
   $('#camState').textContent='off'; $('#camState').style.color='var(--muted)'; $('#micState').textContent='off'; $('#micState').style.color='var(--muted)'; toast('AV off');
 };
 
-/* Media */
-function bindMedia(prefix){
-  $(`#${prefix}play`).onclick=()=>jpost(`${API}/media/play`);
-  $(`#${prefix}pause`).onclick=()=>jpost(`${API}/media/pause`);
-  $(`#${prefix}prev`).onclick=()=>jpost(`${API}/media/prev`);
-  $(`#${prefix}next`).onclick=()=>jpost(`${API}/media/next`);
-  $(`#${prefix}mute`).onclick=()=>jpost(`${API}/media/mute`);
-  $(`#${prefix}unmute`).onclick=()=>jpost(`${API}/media/unmute`);
-  $(`#${prefix}volume`).oninput=async e=>{ await jpost(`${API}/media/volume`,{volume:parseInt(e.target.value,10)}); $(`#volLabel${prefix===''?'':prefix}`).textContent=e.target.value+'%'; };
-}
-bindMedia(''); bindMedia('2');
+/* Media controls - wired to visible controls only */
+$('#play').onclick=()=>jpost(`${API}/media/play`).catch(()=>toast('play ✗'));
+$('#pause').onclick=()=>jpost(`${API}/media/pause`).catch(()=>toast('pause ✗'));
+$('#prev').onclick=()=>jpost(`${API}/media/prev`).catch(()=>toast('prev ✗'));
+$('#next').onclick=()=>jpost(`${API}/media/next`).catch(()=>toast('next ✗'));
+$('#mute').onclick=()=>jpost(`${API}/media/mute`).catch(()=>toast('mute ✗'));
+$('#unmute').onclick=()=>jpost(`${API}/media/unmute`).catch(()=>toast('unmute ✗'));
+$('#volume').oninput=async e=>{ try { await jpost(`${API}/media/volume`,{volume:parseInt(e.target.value,10)}); $('#volLabel').textContent=e.target.value+'%'; } catch(err){ toast('vol ✗'); } };
 
 /* Monitor */
-async function refreshMonitor(){
-  try {
-    const s = await jget(`${API}/system/status`);
-    const pt=$('#procTable'); pt.innerHTML='';
+function refreshMonitor(){
+  jget(`${API}/system/status`).then(s=>{
+    const pt=$('#procTable'); if(!pt) return; pt.innerHTML='';
     (s.processes||[]).forEach(p=>{
       const tr=document.createElement('tr');
       tr.innerHTML=`<td>${p.pid||''}</td><td>${p.cpu||''}</td><td>${p.mem||''}</td><td>${esc(p.name)}</td>`;
       pt.appendChild(tr);
     });
-    $('#procCount').textContent = (s.processes||[]).length + ' procs';
-    $('#netRaw').textContent = s.network || '—';
-    const ni=$('#netInfo'); ni.innerHTML='';
-    const niData = [
+    const pc=$('#procCount'); if(pc) pc.textContent=(s.processes||[]).length+' procs';
+    const nr=$('#netRaw'); if(nr) nr.textContent=s.network||'—';
+    const ni=$('#netInfo'); if(!ni) return; ni.innerHTML='';
+    [
       {label:'Users', value:s.users},
       {label:'Uptime', value:s.uptime},
-      {label:'Top CPU', value:(s.top_cpu||[]).map(x=>x.name+':'+x.pct+'%').join(' | ') || '—'},
-      {label:'Top MEM', value:(s.top_mem||[]).map(x=>x.name+':'+x.pct+'%').join(' | ') || '—'},
-    ];
-    niData.forEach(item=>{
+      {label:'Top CPU', value:(s.top_cpu||[]).map(x=>x.name+':'+x.pct+'%').join(' | ')||'—'},
+      {label:'Top MEM', value:(s.top_mem||[]).map(x=>x.name+':'+x.pct+'%').join(' | ')||'—'},
+    ].forEach(item=>{
       const d=document.createElement('div'); d.className='kv';
       d.innerHTML=`<span>${item.label}</span><span class="metric">${esc(item.value)}</span>`;
       ni.appendChild(d);
     });
-  } catch(e){}
+  }).catch(()=>{});
 }
 
-/* Dashboard refresh */
 function fmtBar(pct){ return Math.max(0,Math.min(100,pct))+'%'; }
-function barClass(pct){ return pct>85?'warn':''; }
-async function refresh(){
-  try {
-    const s = await jget(`${API}/system/status`);
-    $('#cpu').textContent = s.cpu; $('#cpuBar').style.width = fmtBar(parseFloat(s.cpu)); $('#cpuBar').className='bar '+(parseFloat(s.cpu)>90?'warn':'');
-    $('#ram').textContent = `${s.ram_pct}%`; $('#ramBar').style.width = fmtBar(s.ram_pct); $('#ramBar').className='bar '+(s.ram_pct>90?'warn':'');
-    $('#disk').textContent = `${s.disk_pct}% ${s.disk_used}/${s.disk_total}`; $('#diskBar').style.width = fmtBar(s.disk_pct); $('#diskBar').className='bar '+(s.disk_pct>95?'warn':'');
-    $('#gpu').textContent = `${s.gpu_pct}%` + (s.gpu_temp?` @ ${s.gpu_temp}C`:''); $('#gpuBar').style.width = fmtBar(s.gpu_pct); $('#gpuBar').className='bar '+(s.gpu_temp>85?'warn':'');
-    $('#uptime').textContent = s.uptime;
-    $('#users').textContent = s.users;
-    $('#net').textContent = (s.network||'').split(';').filter(x=>x.trim()&&!x.trim().startsWith('docker')&&!x.trim().startsWith('veth')).join('; ') || '—';
+function refresh(){
+  jget(`${API}/system/status`).then(s=>{
+    const cpu=parseFloat(String(s.cpu).replace('%',''))||0;
+    $('#cpu').textContent=s.cpu; $('#cpuBar').style.width=fmtBar(cpu); $('#cpuBar').className='bar'+(cpu>90?' warn':'');
+    $('#ram').textContent=s.ram_pct+'%'; $('#ramBar').style.width=fmtBar(s.ram_pct); $('#ramBar').className='bar'+(s.ram_pct>90?' warn':'');
+    $('#disk').textContent=s.disk_pct+'% '+s.disk_used+'/'+s.disk_total; $('#diskBar').style.width=fmtBar(s.disk_pct); $('#diskBar').className='bar'+(s.disk_pct>95?' warn':'');
+    const gpu=parseFloat(String(s.gpu_pct)); $('#gpu').textContent=s.gpu_pct+'%'+(s.gpu_temp?' @ '+s.gpu_temp+'C':''); $('#gpuBar').style.width=fmtBar(gpu); $('#gpuBar').className='bar'+(s.gpu_temp>85?' warn':'');
+    $('#uptime').textContent=s.uptime;
+    $('#users').textContent=s.users;
+    $('#net').textContent=(s.network||'').split(';').filter(x=>x.trim()&&!x.trim().startsWith('docker')&&!x.trim().startsWith('veth')).join('; ')||'—';
     refreshMonitor();
-  } catch(e){}
+  }).catch(()=>{});
   setTimeout(refresh, 2000);
 }
 
