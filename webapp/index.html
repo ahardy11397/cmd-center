@@ -76,29 +76,29 @@
     <div class="section">
       <div class="group-title">Quick Actions</div>
       <div class="row">
-        <a class="btn" href="/apps/terminal">Terminal</a>
-        <a class="btn" href="/apps/files">Files</a>
-        <a class="btn" href="/apps/browser">Browser</a>
-        <a class="btn" href="/apps/editor">Editor</a>
-        <a class="btn" href="/system/lock">Lock</a>
-        <a class="btn" href="/system/sleep">Sleep</a>
-        <a class="btn" href="/system/logout">Logout</a>
+        <button class="btn" onclick="action('/apps/terminal')">Terminal</button>
+        <button class="btn" onclick="action('/apps/files')">Files</button>
+        <button class="btn" onclick="action('/apps/browser')">Browser</button>
+        <button class="btn" onclick="action('/apps/editor')">Editor</button>
+        <button class="btn" onclick="action('/system/lock')">Lock</button>
+        <button class="btn" onclick="action('/system/sleep')">Sleep</button>
+        <button class="btn" onclick="action('/system/logout')">Logout</button>
       </div>
       <div class="group-title">Terminal</div>
       <div class="row">
-        <form method="post" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- htop"><button class="btn" type="submit">htop</button></form>
-        <form method="post" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- btop"><button class="btn" type="submit">btop</button></form>
-        <form method="post" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'docker ps -a; read'"><button class="btn" type="submit">Docker</button></form>
-        <form method="post" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'ss -tulpn; read'"><button class="btn" type="submit">Netstat</button></form>
-        <form method="post" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'journalctl -p err -n 50 --no-pager; read'"><button class="btn" type="submit">Journal</button></form>
-        <form method="post" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'df -h; read'"><button class="btn" type="submit">Disk</button></form>
+        <button class="btn" onclick="cmd('xfce4-terminal -- htop')">htop</button>
+        <button class="btn" onclick="cmd('xfce4-terminal -- btop')">btop</button>
+        <button class="btn" onclick="cmd('xfce4-terminal -- bash -lc \'docker ps -a; read\'')">Docker</button>
+        <button class="btn" onclick="cmd('xfce4-terminal -- bash -lc \'ss -tulpn; read\'')">Netstat</button>
+        <button class="btn" onclick="cmd('xfce4-terminal -- bash -lc \'journalctl -p err -n 50 --no-pager; read\'')">Journal</button>
+        <button class="btn" onclick="cmd('xfce4-terminal -- bash -lc \'df -h; read\'')">Disk</button>
       </div>
       <div class="group-title">Logs</div>
       <div class="row">
-        <a class="btn" href="/logs?path=journal&n=120">Journal</a>
-        <a class="btn" href="/logs?path=/var/log/dpkg.log&n=120">Dpkg</a>
-        <a class="btn" href="/logs?path=/var/log/boot.log&n=120">Boot</a>
-        <a class="btn" href="/logs?path=/var/log/lightdm&n=120">LightDM</a>
+        <button class="btn" onclick="loadLog('journal',120)">Journal</button>
+        <button class="btn" onclick="loadLog('/var/log/dpkg.log',120)">Dpkg</button>
+        <button class="btn" onclick="loadLog('/var/log/boot.log',120)">Boot</button>
+        <button class="btn" onclick="loadLog('/var/log/lightdm',120)">LightDM</button>
       </div>
       <pre id="logView" class="empty terminal-output">Tap a log above</pre>
     </div>
@@ -107,28 +107,28 @@
       <div class="row" id="wsButtons">loading</div>
       <div class="group-title">Apps</div>
       <div class="row">
-        <form method="post" action="/apps/launch"><input type="hidden" name="command" value="firefox"><button class="btn" type="submit">Firefox</button></form>
-        <form method="post" action="/apps/launch"><input type="hidden" name="command" value="thunar"><button class="btn" type="submit">Files</button></form>
-        <form method="post" action="/apps/launch"><input type="hidden" name="command" value="xfce4-terminal"><button class="btn" type="submit">Terminal</button></form>
-        <form method="post" action="/apps/launch"><input type="hidden" name="command" value="mousepad"><button class="btn" type="submit">Editor</button></form>
-        <form method="post" action="/apps/launch"><input type="hidden" name="command" value="xfce4-calculator"><button class="btn" type="submit">Calc</button></form>
-        <form method="post" action="/apps/launch"><input type="hidden" name="command" value="xfce4-settings-manager"><button class="btn" type="submit">Settings</button></form>
+        <button class="btn" onclick="action('/apps/launch',{command:'firefox'})">Firefox</button>
+        <button class="btn" onclick="action('/apps/launch',{command:'thunar'})">Files</button>
+        <button class="btn" onclick="action('/apps/launch',{command:'xfce4-terminal'})">Terminal</button>
+        <button class="btn" onclick="action('/apps/launch',{command:'mousepad'})">Editor</button>
+        <button class="btn" onclick="action('/apps/launch',{command:'xfce4-calculator'})">Calc</button>
+        <button class="btn" onclick="action('/apps/launch',{command:'xfce4-settings-manager'})">Settings</button>
       </div>
       <div class="group-title">Media</div>
       <div class="row">
-        <form method="post" action="/media/prev"><button class="btn" type="submit">Prev</button></form>
-        <form method="post" action="/media/play"><button class="btn accent" type="submit">Play</button></form>
-        <form method="post" action="/media/pause"><button class="btn" type="submit">Pause</button></form>
-        <form method="post" action="/media/next"><button class="btn" type="submit">Next</button></form>
+        <button class="btn" onclick="post('/media/prev')">Prev</button>
+        <button class="btn accent" onclick="post('/media/play')">Play</button>
+        <button class="btn" onclick="post('/media/pause')">Pause</button>
+        <button class="btn" onclick="post('/media/next')">Next</button>
       </div>
       <div class="kv"><span>Vol</span><span class="metric" id="volLabel">50%</span></div>
-      <form method="post" action="/media/volume" style="display:flex;gap:10px;align-items:center">
-        <input type="range" name="volume" min="0" max="100" value="50" style="flex:1" oninput="document.getElementById('volLabel').textContent=this.value+'%'">
+      <form onsubmit="event.preventDefault();var v=document.getElementById('volRange').value;fetch('/media/volume',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({volume:Number(v)})}).then(function(){toast('Vol '+v+'%');}).catch(function(){toast('err');});" style="display:flex;gap:10px;align-items:center">
+        <input type="range" id="volRange" min="0" max="100" value="50" style="flex:1" oninput="document.getElementById('volLabel').textContent=this.value+'%'">
         <button class="btn" type="submit">Set</button>
       </form>
       <div class="row">
-        <form method="post" action="/media/mute"><button class="btn" type="submit">Mute</button></form>
-        <form method="post" action="/media/unmute"><button class="btn" type="submit">Unmute</button></form>
+        <button class="btn" onclick="post('/media/mute')">Mute</button>
+        <button class="btn" onclick="post('/media/unmute')">Unmute</button>
       </div>
     </div>
   </div>
@@ -159,12 +159,12 @@
     <div class="section">
       <div class="group-title">Macros</div>
       <div class="row">
-        <form method="post" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'echo === CPU; lscpu | grep Name; echo === RAM; free -h; echo === DISK; df -h /; echo === GPU; nvidia-smi; echo === NET; ip -br addr; read'"><button class="btn" type="submit">Diagnostics</button></form>
-        <form method="post" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'sudo apt update && sudo apt upgrade -y && sudo apt autoremove -y; read'"><button class="btn" type="submit">Updates</button></form>
-        <form method="post" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'docker system prune -af --volumes; read'"><button class="btn" type="submit">Docker Clean</button></form>
-        <form method="post" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'journalctl -p err -n 100 --no-pager; read'"><button class="btn" type="submit">Journal Errors</button></form>
-        <form method="post" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'curl -s https://install.speedtest.net/app/cli/install.deb.sh | sudo bash && speedtest; read'"><button class="btn" type="submit">Speedtest</button></form>
-        <form method="post" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'ping -c 5 8.8.8.8; read'"><button class="btn" type="submit">Ping Google</button></form>
+        <button class="btn" onclick="cmd('xfce4-terminal -- bash -lc \'echo === CPU; lscpu | grep Name; echo === RAM; free -h; echo === DISK; df -h /; echo === GPU; nvidia-smi; echo === NET; ip -br addr; read\'')">Diagnostics</button>
+        <button class="btn" onclick="cmd('xfce4-terminal -- bash -lc \'sudo apt update && sudo apt upgrade -y && sudo apt autoremove -y; read\'')">Updates</button>
+        <button class="btn" onclick="cmd('xfce4-terminal -- bash -lc \'docker system prune -af --volumes; read\'')">Docker Clean</button>
+        <button class="btn" onclick="cmd('xfce4-terminal -- bash -lc \'journalctl -p err -n 100 --no-pager; read\'')">Journal Errors</button>
+        <button class="btn" onclick="cmd('xfce4-terminal -- bash -lc \'curl -s https://install.speedtest.net/app/cli/install.deb.sh | sudo bash && speedtest; read\'')">Speedtest</button>
+        <button class="btn" onclick="cmd('xfce4-terminal -- bash -lc \'ping -c 5 8.8.8.8; read\'')">Ping Google</button>
       </div>
       <div class="group-title">Shortcuts</div>
       <div>
@@ -178,26 +178,26 @@
     <div class="section">
       <div class="group-title">Utilities</div>
       <div class="row">
-        <form method="post" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- htop"><button class="btn" type="submit">htop</button></form>
-        <form method="post" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- btop"><button class="btn" type="submit">btop</button></form>
-        <form method="post" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'ncdu /; read'"><button class="btn" type="submit">ncdu</button></form>
-        <form method="post" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'ping -c 5 8.8.8.8; read'"><button class="btn" type="submit">Ping Google</button></form>
-        <form method="post" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'nmcli dev wifi list; read'"><button class="btn" type="submit">Wifi Scan</button></form>
-        <form method="post" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'nmcli con show; read'"><button class="btn" type="submit">Connections</button></form>
+        <button class="btn" onclick="cmd('xfce4-terminal -- htop')">htop</button>
+        <button class="btn" onclick="cmd('xfce4-terminal -- btop')">btop</button>
+        <button class="btn" onclick="cmd('xfce4-terminal -- bash -lc \'ncdu /; read\'')">ncdu</button>
+        <button class="btn" onclick="cmd('xfce4-terminal -- bash -lc \'ping -c 5 8.8.8.8; read\'')">Ping Google</button>
+        <button class="btn" onclick="cmd('xfce4-terminal -- bash -lc \'nmcli dev wifi list; read\'')">Wifi Scan</button>
+        <button class="btn" onclick="cmd('xfce4-terminal -- bash -lc \'nmcli con show; read\'')">Connections</button>
       </div>
       <div class="group-title">System</div>
       <div class="row">
-        <a class="btn" href="/system/lock">Lock</a>
-        <a class="btn" href="/system/sleep">Sleep</a>
-        <a class="btn" href="/system/logout">Logout</a>
-        <a class="btn" href="/system/reboot">Reboot</a>
-        <a class="btn" href="/system/shutdown">Shutdown</a>
+        <button class="btn" onclick="action('/system/lock')">Lock</button>
+        <button class="btn" onclick="action('/system/sleep')">Sleep</button>
+        <button class="btn" onclick="action('/system/logout')">Logout</button>
+        <button class="btn" onclick="action('/system/reboot')">Reboot</button>
+        <button class="btn" onclick="action('/system/shutdown')">Shutdown</button>
       </div>
       <div class="group-title">Capture</div>
       <div class="row">
-        <form method="post" action="/capture/screenshot"><button class="btn" type="submit">Screenshot</button></form>
-        <form method="post" action="/capture/record"><input type="hidden" name="action" value="toggle"><button class="btn" type="submit">Record Start</button></form>
-        <form method="post" action="/capture/record"><input type="hidden" name="action" value="stop"><button class="btn" type="submit">Record Stop</button></form>
+        <button class="btn" onclick="post('/capture/screenshot')">Screenshot</button>
+        <button class="btn" onclick="postForm('/capture/record',{action:'toggle'})">Record Start</button>
+        <button class="btn" onclick="postForm('/capture/record',{action:'stop'})">Record Stop</button>
       </div>
     </div>
   </div>
@@ -218,28 +218,28 @@
     <div class="section">
       <div class="group-title">Screen Capture</div>
       <div class="row">
-        <form method="post" action="/capture/screenshot"><button class="btn" type="submit">Screenshot</button></form>
-        <form method="post" action="/capture/record"><input type="hidden" name="action" value="toggle"><button class="btn" type="submit">Record Start</button></form>
-        <form method="post" action="/capture/record"><input type="hidden" name="action" value="stop"><button class="btn" type="submit">Record Stop</button></form>
+        <button class="btn" onclick="post('/capture/screenshot')">Screenshot</button>
+        <button class="btn" onclick="postForm('/capture/record',{action:'toggle'})">Record Start</button>
+        <button class="btn" onclick="postForm('/capture/record',{action:'stop'})">Record Stop</button>
       </div>
       <pre id="captureStatus" class="terminal-output">Idle</pre>
     </div>
     <div class="section">
       <div class="group-title">Media</div>
       <div class="row">
-        <form method="post" action="/media/prev"><button class="btn" type="submit">Prev</button></form>
-        <form method="post" action="/media/play"><button class="btn accent" type="submit">Play</button></form>
-        <form method="post" action="/media/pause"><button class="btn" type="submit">Pause</button></form>
-        <form method="post" action="/media/next"><button class="btn" type="submit">Next</button></form>
+        <button class="btn" onclick="post('/media/prev')">Prev</button>
+        <button class="btn accent" onclick="post('/media/play')">Play</button>
+        <button class="btn" onclick="post('/media/pause')">Pause</button>
+        <button class="btn" onclick="post('/media/next')">Next</button>
       </div>
       <div class="kv"><span>Vol</span><span class="metric" id="volLabel2">50%</span></div>
-      <form method="post" action="/media/volume" style="display:flex;gap:10px;align-items:center">
-        <input type="range" name="volume" min="0" max="100" value="50" style="flex:1" oninput="document.getElementById('volLabel2').textContent=this.value+'%'">
+      <form onsubmit="event.preventDefault();var v=document.getElementById('volRange2').value;fetch('/media/volume',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({volume:Number(v)})}).then(function(){toast('Vol '+v+'%');}).catch(function(){toast('err');});" style="display:flex;gap:10px;align-items:center">
+        <input type="range" id="volRange2" min="0" max="100" value="50" style="flex:1" oninput="document.getElementById('volLabel2').textContent=this.value+'%'">
         <button class="btn" type="submit">Set</button>
       </form>
       <div class="row">
-        <form method="post" action="/media/mute"><button class="btn" type="submit">Mute</button></form>
-        <form method="post" action="/media/unmute"><button class="btn" type="submit">Unmute</button></form>
+        <button class="btn" onclick="post('/media/mute')">Mute</button>
+        <button class="btn" onclick="post('/media/unmute')">Unmute</button>
       </div>
     </div>
   </div>
@@ -249,8 +249,14 @@
 <script>
 (function(){
   try {
-    var $ = function(s){ return document.querySelector(s); };
+function post(url){fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).then(function(r){if(!r.ok) throw new Error(r.statusText); toast('ok');}).catch(function(e){toast('err: '+e.message);});}
+    function action(url,data){fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data||{})}).then(function(r){if(!r.ok) throw new Error(r.statusText); toast('ok');}).catch(function(e){toast('err: '+e.message);});}
+    function postForm(url,data){fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data||{})}).then(function(r){if(!r.ok) throw new Error(r.statusText); toast('ok');}).catch(function(e){toast('err: '+e.message);});}
+    function cmd(command){action('/command/run',{command:command});}
+    function loadLog(path,n){fetch('/logs?path='+encodeURIComponent(path)+'&n='+(n||80)).then(function(r){return r.json();}).then(function(d){var el=document.getElementById('logView');if(el){el.textContent=d.text||'empty';}}).catch(function(e){toast('log err');});}
+        var $ = function(s){ return document.querySelector(s); };
     var API = location.origin;
+    function postJSON(url,data){fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data||{})}).catch(function(){});}
     var toast = function(msg){ var t=$('#toast'); if(!t) return; t.textContent=msg; t.classList.add('show'); setTimeout(function(){ t.classList.remove('show'); },1400); };
 
     function showView(id){
@@ -306,8 +312,9 @@
       fetch('/config').then(function(r){ if(!r.ok) throw new Error(r.statusText); return r.json(); }).then(function(cfg){
         var c = $('#wsButtons'); if(!c) return; c.innerHTML = '';
         var items = cfg.workspaces || [];
-        for(var i=0;i<items.length && i<5;i++){
-          var f = document.createElement('form'); f.method='post'; f.action='/workspace/switch'; f.style.display='inline';
+        for(let i=0;i<items.length;i++){
+          var f = document.createElement('form');
+          f.method='post'; f.action='/workspace/switch'; f.style.display='inline';
           var inp = document.createElement('input'); inp.type='hidden'; inp.name='index'; inp.value=items[i].index;
           var b = document.createElement('button'); b.className='btn'; b.type='submit'; b.textContent='WS '+items[i].index;
           f.appendChild(inp); f.appendChild(b); c.appendChild(f);

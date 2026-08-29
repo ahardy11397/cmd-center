@@ -81,7 +81,8 @@ async def media_volume(req: VolumeRequest):
 
 @app.post("/workspace/switch")
 async def workspace_switch(req: CommandRequest):
-    return await _run(f"wmctrl -s {req.command}")
+    await _run(f"wmctrl -s {req.command}")
+    return JSONResponse({"ok": True})
 
 @app.post("/apps/launch")
 async def apps_launch(req: CommandRequest):
@@ -215,9 +216,18 @@ async def _run(cmd: str):
 
 def _read_cpu():
     try:
-        with open("/proc/loadavg") as f:
-            l1 = f.read().split()[0]
-        return f"{round(float(l1) * 100)}%"
+        out = subprocess.check_output(["top", "-bn1"], text=True)
+        for line in out.splitlines():
+            if "Cpu(s):" in line:
+                idle = float(line.split(",")[3].strip().split()[0].replace("%id","").replace("id","").strip())
+                return f"{round(100 - idle)}%"
+    except Exception:
+        pass
+    try:
+        out = subprocess.check_output(["ps", "-eo", "%cpu="], text=True)
+        total = sum(float(x.strip()) for x in out.splitlines() if x.strip())
+        cores = max(1, int(subprocess.check_output(["nproc"], text=True).strip()))
+        return f"{round(min(total/cores*100, 100))}%"
     except Exception:
         return "—"
 
