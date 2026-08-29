@@ -52,6 +52,90 @@ async def index():
 async def config():
     return JSONResponse({"workspaces": WORKSPACES})
 
+
+@app.get("/media/play")
+async def media_play_get():
+    return await media_play()
+
+@app.get("/media/pause")
+async def media_pause_get():
+    return await media_pause()
+
+@app.get("/media/prev")
+async def media_prev_get():
+    return await media_prev()
+
+@app.get("/media/next")
+async def media_next_get():
+    return await media_next()
+
+@app.get("/media/mute")
+async def media_mute_get():
+    return await media_mute()
+
+@app.get("/media/unmute")
+async def media_unmute_get():
+    return await media_unmute()
+
+@app.get("/media/volume")
+async def media_volume_get(v: int = 50):
+    return await media_volume(VolumeRequest(volume=v))
+
+@app.get("/workspace/switch")
+async def workspace_switch_get(index: int = 0):
+    return await workspace_switch(CommandRequest(index=index))
+
+@app.get("/apps/launch")
+async def apps_launch_get(command: str = ""):
+    return await apps_launch(CommandRequest(command=command))
+
+@app.get("/apps/terminal")
+async def apps_terminal_get():
+    return await apps_terminal()
+
+@app.get("/apps/files")
+async def apps_files_get():
+    return await apps_files()
+
+@app.get("/apps/browser")
+async def apps_browser_get():
+    return await apps_browser()
+
+@app.get("/apps/editor")
+async def apps_editor_get():
+    return await apps_editor()
+
+@app.get("/command/run")
+async def command_run_get(command: str = ""):
+    return await command_run(CommandRequest(command=command))
+
+@app.get("/system/lock")
+async def system_lock_get():
+    return await system_lock()
+
+@app.get("/system/sleep")
+async def system_sleep_get():
+    return await system_sleep()
+
+@app.get("/system/logout")
+async def system_logout_get():
+    return await system_logout()
+
+@app.get("/system/reboot")
+async def system_reboot_get():
+    return await system_reboot()
+
+@app.get("/system/shutdown")
+async def system_shutdown_get():
+    return await system_shutdown()
+
+@app.get("/capture/screenshot")
+async def capture_screenshot_get():
+    return await capture_screenshot()
+
+@app.get("/capture/record")
+async def capture_record_get(action: str = "toggle"):
+    return await capture_record(CaptureRequest(action=action))
 @app.post("/media/play")
 async def media_play():
     return await _run("playerctl play")
