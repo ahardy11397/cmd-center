@@ -29,7 +29,8 @@ WORKSPACES = [
 ]
 
 class CommandRequest(BaseModel):
-    command: str
+    command: str = ""
+    index: int = 0
 
 class VolumeRequest(BaseModel):
     volume: int
@@ -81,8 +82,8 @@ async def media_volume(req: VolumeRequest):
 
 @app.post("/workspace/switch")
 async def workspace_switch(req: CommandRequest):
-    await _run(f"wmctrl -s {req.command}")
-    return JSONResponse({"ok": True})
+    idx = req.index if req.index else (int(req.command) if req.command.isdigit() else 0)
+    return await _run(f"wmctrl -s {idx}")
 
 @app.post("/apps/launch")
 async def apps_launch(req: CommandRequest):
