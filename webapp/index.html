@@ -46,7 +46,6 @@
 </style>
 </head>
 <body>
-<iframe name="cmdframe" id="cmdframe" style="display:none"></iframe>
 <div class="error" id="error"></div>
 <div class="topbar">
   <div class="title">CMD</div>
@@ -77,22 +76,22 @@
     <div class="section">
       <div class="group-title">Quick Actions</div>
       <div class="row">
-        <form method="post" target="cmdframe" action="/apps/terminal"><button class="btn" type="submit">Terminal</button></form>
-        <form method="post" target="cmdframe" action="/apps/files"><button class="btn" type="submit">Files</button></form>
-        <form method="post" target="cmdframe" action="/apps/browser"><button class="btn" type="submit">Browser</button></form>
-        <form method="post" target="cmdframe" action="/apps/editor"><button class="btn" type="submit">Editor</button></form>
-        <form method="post" target="cmdframe" action="/system/lock"><button class="btn" type="submit">Lock</button></form>
-        <form method="post" target="cmdframe" action="/system/sleep"><button class="btn" type="submit">Sleep</button></form>
-        <form method="post" target="cmdframe" action="/system/logout"><button class="btn" type="submit">Logout</button></form>
+        <a class="btn" href="/apps/terminal">Terminal</a>
+        <a class="btn" href="/apps/files">Files</a>
+        <a class="btn" href="/apps/browser">Browser</a>
+        <a class="btn" href="/apps/editor">Editor</a>
+        <a class="btn" href="/system/lock">Lock</a>
+        <a class="btn" href="/system/sleep">Sleep</a>
+        <a class="btn" href="/system/logout">Logout</a>
       </div>
       <div class="group-title">Terminal</div>
       <div class="row">
-        <form method="post" target="cmdframe" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- htop"><button class="btn" type="submit">htop</button></form>
-        <form method="post" target="cmdframe" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- btop"><button class="btn" type="submit">btop</button></form>
-        <form method="post" target="cmdframe" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'docker ps -a; read'"><button class="btn" type="submit">Docker</button></form>
-        <form method="post" target="cmdframe" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'ss -tulpn; read'"><button class="btn" type="submit">Netstat</button></form>
-        <form method="post" target="cmdframe" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'journalctl -p err -n 50 --no-pager; read'"><button class="btn" type="submit">Journal</button></form>
-        <form method="post" target="cmdframe" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'df -h; read'"><button class="btn" type="submit">Disk</button></form>
+        <a class="btn" href="/run?command=xfce4-terminal%20--%20htop">htop</a>
+        <a class="btn" href="/run?command=xfce4-terminal%20--%20btop">btop</a>
+        <a class="btn" href="/run?command=xfce4-terminal%20--%20bash%20-lc%20%27docker%20ps%20-a%3B%20read%27">Docker</a>
+        <a class="btn" href="/run?command=xfce4-terminal%20--%20bash%20-lc%20%27ss%20-tulpn%3B%20read%27">Netstat</a>
+        <a class="btn" href="/run?command=xfce4-terminal%20--%20bash%20-lc%20%27journalctl%20-p%20err%20-n%2050%20--no-pager%3B%20read%27">Journal</a>
+        <a class="btn" href="/run?command=xfce4-terminal%20--%20bash%20-lc%20%27df%20-h%3B%20read%27">Disk</a>
       </div>
       <div class="group-title">Logs</div>
       <div class="row">
@@ -108,19 +107,19 @@
       <div class="row" id="wsButtons">loading</div>
       <div class="group-title">Apps</div>
       <div class="row">
-        <form method="post" target="cmdframe" action="/apps/launch"><input type="hidden" name="command" value="firefox"><button class="btn" type="submit">Firefox</button></form>
-        <form method="post" target="cmdframe" action="/apps/launch"><input type="hidden" name="command" value="thunar"><button class="btn" type="submit">Files</button></form>
-        <form method="post" target="cmdframe" action="/apps/launch"><input type="hidden" name="command" value="xfce4-terminal"><button class="btn" type="submit">Terminal</button></form>
-        <form method="post" target="cmdframe" action="/apps/launch"><input type="hidden" name="command" value="mousepad"><button class="btn" type="submit">Editor</button></form>
-        <form method="post" target="cmdframe" action="/apps/launch"><input type="hidden" name="command" value="xfce4-calculator"><button class="btn" type="submit">Calc</button></form>
-        <form method="post" target="cmdframe" action="/apps/launch"><input type="hidden" name="command" value="xfce4-settings-manager"><button class="btn" type="submit">Settings</button></form>
+        <a class="btn" href="/launch?app=firefox">Firefox</a>
+        <a class="btn" href="/launch?app=thunar">Files</a>
+        <a class="btn" href="/launch?app=xfce4-terminal">Terminal</a>
+        <a class="btn" href="/launch?app=mousepad">Editor</a>
+        <a class="btn" href="/launch?app=xfce4-calculator">Calc</a>
+        <a class="btn" href="/launch?app=xfce4-settings-manager">Settings</a>
       </div>
       <div class="group-title">Media</div>
       <div class="row">
-        <form method="post" target="cmdframe" action="/media/prev"><button class="btn" type="submit">Prev</button></form>
-        <form method="post" target="cmdframe" action="/media/play"><button class="btn accent" type="submit">Play</button></form>
-        <form method="post" target="cmdframe" action="/media/pause"><button class="btn" type="submit">Pause</button></form>
-        <form method="post" target="cmdframe" action="/media/next"><button class="btn" type="submit">Next</button></form>
+        <a class="btn" href="/media/prev">Prev</a>
+        <a class="btn accent" href="/media/play">Play</a>
+        <a class="btn" href="/media/pause">Pause</a>
+        <a class="btn" href="/media/next">Next</a>
       </div>
       <div class="kv"><span>Vol</span><span class="metric" id="volLabel">50%</span></div>
       <form onsubmit="event.preventDefault();var v=document.getElementById('volRange').value;fetch('/media/volume',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({volume:Number(v)})}).then(function(){toast('Vol '+v+'%');}).catch(function(){toast('err');});" style="display:flex;gap:10px;align-items:center">
@@ -128,8 +127,8 @@
         <button class="btn" type="submit">Set</button>
       </form>
       <div class="row">
-        <form method="post" target="cmdframe" action="/media/mute"><button class="btn" type="submit">Mute</button></form>
-        <form method="post" target="cmdframe" action="/media/unmute"><button class="btn" type="submit">Unmute</button></form>
+        <a class="btn" href="/media/mute">Mute</a>
+        <a class="btn" href="/media/unmute">Unmute</a>
       </div>
     </div>
   </div>
@@ -160,10 +159,10 @@
     <div class="section">
       <div class="group-title">Macros</div>
       <div class="row">
-        <form method="post" target="cmdframe" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'echo === CPU; lscpu | grep Name; echo === RAM; free -h; echo === DISK; df -h /; echo === GPU; nvidia-smi; echo === NET; ip -br addr; read'"><button class="btn" type="submit">Diagnostics</button></form>
-        <form method="post" target="cmdframe" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'sudo apt update && sudo apt upgrade -y && sudo apt autoremove -y; read'"><button class="btn" type="submit">Updates</button></form>
-        <form method="post" target="cmdframe" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'docker system prune -af --volumes; read'"><button class="btn" type="submit">Docker Clean</button></form>
-        <form method="post" target="cmdframe" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'journalctl -p err -n 100 --no-pager; read'"><button class="btn" type="submit">Journal Errors</button></form>
+        <a class="btn" href="/run?command=xfce4-terminal%20--%20bash%20-lc%20%27echo%20===%20CPU%3B%20lscpu%20%7C%20grep%20Name%3B%20echo%20===%20RAM%3B%20free%20-h%3B%20echo%20===%20DISK%3B%20df%20-h%20%2F%3B%20echo%20===%20GPU%3B%20nvidia-smi%3B%20echo%20===%20NET%3B%20ip%20-br%20addr%3B%20read%27">Diagnostics</a>
+        <a class="btn" href="/run?command=xfce4-terminal%20--%20bash%20-lc%20%27sudo%20apt%20update%20%26%26%20sudo%20apt%20upgrade%20-y%20%26%26%20sudo%20apt%20autoremove%20-y%3B%20read%27">Updates</a>
+        <a class="btn" href="/run?command=xfce4-terminal%20--%20bash%20-lc%20%27docker%20system%20prune%20-af%20--volumes%3B%20read%27">Docker Clean</a>
+        <a class="btn" href="/run?command=xfce4-terminal%20--%20bash%20-lc%20%27journalctl%20-p%20err%20-n%20100%20--no-pager%3B%20read%27">Journal Errors</button></form>
         <form method="post" target="cmdframe" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'curl -s https://install.speedtest.net/app/cli/install.deb.sh | sudo bash && speedtest; read'"><button class="btn" type="submit">Speedtest</button></form>
         <form method="post" target="cmdframe" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'ping -c 5 8.8.8.8; read'"><button class="btn" type="submit">Ping Google</button></form>
       </div>
@@ -179,8 +178,8 @@
     <div class="section">
       <div class="group-title">Utilities</div>
       <div class="row">
-        <form method="post" target="cmdframe" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- htop"><button class="btn" type="submit">htop</button></form>
-        <form method="post" target="cmdframe" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- btop"><button class="btn" type="submit">btop</button></form>
+        <a class="btn" href="/run?command=xfce4-terminal%20--%20htop">htop</a>
+        <a class="btn" href="/run?command=xfce4-terminal%20--%20btop">btop</a>
         <form method="post" target="cmdframe" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'ncdu /; read'"><button class="btn" type="submit">ncdu</button></form>
         <form method="post" target="cmdframe" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'ping -c 5 8.8.8.8; read'"><button class="btn" type="submit">Ping Google</button></form>
         <form method="post" target="cmdframe" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'nmcli dev wifi list; read'"><button class="btn" type="submit">Wifi Scan</button></form>
@@ -188,17 +187,17 @@
       </div>
       <div class="group-title">System</div>
       <div class="row">
-        <form method="post" target="cmdframe" action="/system/lock"><button class="btn" type="submit">Lock</button></form>
-        <form method="post" target="cmdframe" action="/system/sleep"><button class="btn" type="submit">Sleep</button></form>
-        <form method="post" target="cmdframe" action="/system/logout"><button class="btn" type="submit">Logout</button></form>
-        <form method="post" target="cmdframe" action="/system/reboot"><button class="btn" type="submit">Reboot</button></form>
-        <form method="post" target="cmdframe" action="/system/shutdown"><button class="btn" type="submit">Shutdown</button></form>
+        <a class="btn" href="/system/lock">Lock</a>
+        <a class="btn" href="/system/sleep">Sleep</a>
+        <a class="btn" href="/system/logout">Logout</a>
+        <a class="btn" href="/system/reboot">Reboot</a>
+        <a class="btn" href="/system/shutdown">Shutdown</a>
       </div>
       <div class="group-title">Capture</div>
       <div class="row">
-        <form method="post" target="cmdframe" action="/capture/screenshot"><button class="btn" type="submit">Screenshot</button></form>
-        <form method="post" target="cmdframe" action="/capture/record"><input type="hidden" name="action" value="toggle"><button class="btn" type="submit">Record Start</button></form>
-        <form method="post" target="cmdframe" action="/capture/record"><input type="hidden" name="action" value="stop"><button class="btn" type="submit">Record Stop</button></form>
+        <a class="btn" href="/capture/screenshot">Screenshot</a>
+        <a class="btn" href="/capture/record?action=toggle">Record Start</a>
+        <a class="btn" href="/capture/record?action=stop">Record Stop</a>
       </div>
     </div>
   </div>
@@ -219,19 +218,19 @@
     <div class="section">
       <div class="group-title">Screen Capture</div>
       <div class="row">
-        <form method="post" target="cmdframe" action="/capture/screenshot"><button class="btn" type="submit">Screenshot</button></form>
-        <form method="post" target="cmdframe" action="/capture/record"><input type="hidden" name="action" value="toggle"><button class="btn" type="submit">Record Start</button></form>
-        <form method="post" target="cmdframe" action="/capture/record"><input type="hidden" name="action" value="stop"><button class="btn" type="submit">Record Stop</button></form>
+        <a class="btn" href="/capture/screenshot">Screenshot</a>
+        <a class="btn" href="/capture/record?action=toggle">Record Start</a>
+        <a class="btn" href="/capture/record?action=stop">Record Stop</a>
       </div>
       <pre id="captureStatus" class="terminal-output">Idle</pre>
     </div>
     <div class="section">
       <div class="group-title">Media</div>
       <div class="row">
-        <form method="post" target="cmdframe" action="/media/prev"><button class="btn" type="submit">Prev</button></form>
-        <form method="post" target="cmdframe" action="/media/play"><button class="btn accent" type="submit">Play</button></form>
-        <form method="post" target="cmdframe" action="/media/pause"><button class="btn" type="submit">Pause</button></form>
-        <form method="post" target="cmdframe" action="/media/next"><button class="btn" type="submit">Next</button></form>
+        <a class="btn" href="/media/prev">Prev</a>
+        <a class="btn accent" href="/media/play">Play</a>
+        <a class="btn" href="/media/pause">Pause</a>
+        <a class="btn" href="/media/next">Next</a>
       </div>
       <div class="kv"><span>Vol</span><span class="metric" id="volLabel2">50%</span></div>
       <form onsubmit="event.preventDefault();var v=document.getElementById('volRange2').value;fetch('/media/volume',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({volume:Number(v)})}).then(function(){toast('Vol '+v+'%');}).catch(function(){toast('err');});" style="display:flex;gap:10px;align-items:center">
@@ -239,8 +238,8 @@
         <button class="btn" type="submit">Set</button>
       </form>
       <div class="row">
-        <form method="post" target="cmdframe" action="/media/mute"><button class="btn" type="submit">Mute</button></form>
-        <form method="post" target="cmdframe" action="/media/unmute"><button class="btn" type="submit">Unmute</button></form>
+        <a class="btn" href="/media/mute">Mute</a>
+        <a class="btn" href="/media/unmute">Unmute</a>
       </div>
     </div>
   </div>
