@@ -44,6 +44,11 @@ class TerminalRequest(BaseModel):
 
 TERMINAL_SESSIONS = {}
 
+def _run_html(cmd):
+    """Run command in background and return HTML that redirects back to /"""
+    asyncio.get_event_loop().run_in_executor(None, lambda: subprocess.Popen(cmd, shell=True, start_new_session=True))
+    return HTMLResponse("<html><body><script>setTimeout(()=>location.href='/',800);</script>ok</body></html>")
+
 @app.get("/", response_class=HTMLResponse)
 async def index():
     return HTMLResponse(content=WEBAPP.read_text())
@@ -52,99 +57,103 @@ async def index():
 async def config():
     return JSONResponse({"workspaces": WORKSPACES})
 
-
+# GET routes for direct browser access (no JS needed)
 @app.get("/media/play")
 async def media_play_get():
-    return await _run("playerctl play") or HTMLResponse("<html><body><script>setTimeout(()=>location.href='/',800);</script>ok</body></html>")
+    return _run_html("playerctl play")
 
 @app.get("/media/pause")
 async def media_pause_get():
-    return await _run("playerctl pause") or HTMLResponse("<html><body><script>setTimeout(()=>location.href='/',800);</script>ok</body></html>")
+    return _run_html("playerctl pause")
 
 @app.get("/media/prev")
 async def media_prev_get():
-    return await _run("playerctl previous") or HTMLResponse("<html><body><script>setTimeout(()=>location.href='/',800);</script>ok</body></html>")
+    return _run_html("playerctl previous")
 
 @app.get("/media/next")
 async def media_next_get():
-    return await _run("playerctl next") or HTMLResponse("<html><body><script>setTimeout(()=>location.href='/',800);</script>ok</body></html>")
+    return _run_html("playerctl next")
 
 @app.get("/media/mute")
 async def media_mute_get():
-    return await _run("pactl set-sink-mute @DEFAULT_SINK@ 1") or HTMLResponse("<html><body><script>setTimeout(()=>location.href='/',800);</script>ok</body></html>")
+    return _run_html("pactl set-sink-mute @DEFAULT_SINK@ 1")
 
 @app.get("/media/unmute")
 async def media_unmute_get():
-    return await _run("pactl set-sink-mute @DEFAULT_SINK@ 0") or HTMLResponse("<html><body><script>setTimeout(()=>location.href='/',800);</script>ok</body></html>")
+    return _run_html("pactl set-sink-mute @DEFAULT_SINK@ 0")
 
 @app.get("/media/volume")
 async def media_volume_get(v: int = 50):
-    return await _run(f"pactl set-sink-volume @DEFAULT_SINK@ {max(0, min(100, v))}%") or HTMLResponse("<html><body><script>setTimeout(()=>location.href='/',800);</script>ok</body></html>")
+    return _run_html(f"pactl set-sink-volume @DEFAULT_SINK@ {max(0, min(100, v))}%")
 
 @app.get("/workspace/switch")
 async def workspace_switch_get(index: int = 0):
     idx = int(index)
-    return await _run(f"wmctrl -s {idx}") or HTMLResponse("<html><body><script>setTimeout(()=>location.href='/',800);</script>ok</body></html>")
+    return _run_html(f"wmctrl -s {idx}")
 
 @app.get("/apps/launch")
 async def apps_launch_get(app: str = ""):
     cmd = app
     if not re.search(r"^(firefox|thunar|xfce4-terminal|mousepad|xfce4-calculator|xfce4-settings-manager)$", cmd):
         return HTMLResponse("<html><body><script>setTimeout(()=>location.href='/',800);</script>bad app</body></html>", status_code=400)
-    asyncio.get_event_loop().run_in_executor(None, lambda: subprocess.Popen(cmd, shell=True, start_new_session=True))
-    return HTMLResponse("<html><body><script>setTimeout(()=>location.href='/',800);</script>ok</body></html>")
+    return _run_html(cmd)
 
 @app.get("/apps/terminal")
 async def apps_terminal_get():
-    return await _run("xfce4-terminal") or HTMLResponse("<html><body><script>setTimeout(()=>location.href='/',800);</script>ok</body></html>")
+    return _run_html("xfce4-terminal")
 
 @app.get("/apps/files")
 async def apps_files_get():
-    return await _run("thunar") or HTMLResponse("<html><body><script>setTimeout(()=>location.href='/',800);</script>ok</body></html>")
+    return _run_html("thunar")
 
 @app.get("/apps/browser")
 async def apps_browser_get():
-    return await _run("firefox") or HTMLResponse("<html><body><script>setTimeout(()=>location.href='/',800);</script>ok</body></html>")
+    return _run_html("firefox")
 
 @app.get("/apps/editor")
 async def apps_editor_get():
-    return await _run("mousepad") or HTMLResponse("<html><body><script>setTimeout(()=>location.href='/',800);</script>ok</body></html>")
+    return _run_html("mousepad")
 
 @app.get("/run")
 async def command_run_get(command: str = ""):
     cmd = command
     if not re.search(r"^(kitty|xfce4-terminal|xterm|gnome-terminal|bash|sudo|apt|htop|btop|docker|ss|journalctl|df|playerctl|pactl|wmctrl|reboot|shutdown|systemctl|nmcli|ping|curl|ncdu|speedtest)", cmd):
         return HTMLResponse("<html><body><script>setTimeout(()=>location.href='/',800);</script>bad cmd</body></html>", status_code=400)
-    asyncio.get_event_loop().run_in_executor(None, lambda: subprocess.Popen(cmd, shell=True, start_new_session=True))
-    return HTMLResponse("<html><body><script>setTimeout(()=>location.href='/',800);</script>ok</body></html>")
+    return _run_html(cmd)
 
 @app.get("/system/lock")
 async def system_lock_get():
-    return await _run("loginctl lock-session $(loginctl | grep $(whoami) | awk 'NR==1{print $1}')") or HTMLResponse("<html><body><script>setTimeout(()=>location.href='/',800);</script>ok</body></html>")
+    return _run_html("loginctl lock-session $(loginctl | grep $(whoami) | awk 'NR==1{print $1}')")
 
 @app.get("/system/sleep")
 async def system_sleep_get():
-    return await _run("systemctl suspend") or HTMLResponse("<html><body><script>setTimeout(()=>location.href='/',800);</script>ok</body></html>")
+    return _run_html("systemctl suspend")
 
 @app.get("/system/logout")
 async def system_logout_get():
-    return await _run("loginctl terminate-user $(whoami)") or HTMLResponse("<html><body><script>setTimeout(()=>location.href='/',800);</script>ok</body></html>")
+    return _run_html("loginctl terminate-user $(whoami)")
 
 @app.get("/system/reboot")
 async def system_reboot_get():
-    return await _run("systemctl reboot") or HTMLResponse("<html><body><script>setTimeout(()=>location.href='/',800);</script>ok</body></html>")
+    return _run_html("systemctl reboot")
 
 @app.get("/system/shutdown")
 async def system_shutdown_get():
-    return await _run("systemctl poweroff") or HTMLResponse("<html><body><script>setTimeout(()=>location.href='/',800);</script>ok</body></html>")
+    return _run_html("systemctl poweroff")
 
 @app.get("/capture/screenshot")
 async def capture_screenshot_get():
-    return await capture_screenshot() or HTMLResponse("<html><body><script>setTimeout(()=>location.href='/',800);</script>ok</body></html>")
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    out = str(CAPTURE_DIR / f"screenshot_{ts}.png")
+    return _run_html(f"xfce4-screenshooter -f -s {out}")
 
 @app.get("/capture/record")
 async def capture_record_get(action: str = "toggle"):
-    return await capture_record(CaptureRequest(action=action)) or HTMLResponse("<html><body><script>setTimeout(()=>location.href='/',800);</script>ok</body></html>")
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    out = str(CAPTURE_DIR / f"screen_{ts}.ogv")
+    return _run_html(f"recordmydesktop --no-sound -o {out}")
+
+# POST routes for JSON API
 @app.post("/media/play")
 async def media_play():
     return await _run("playerctl play")
