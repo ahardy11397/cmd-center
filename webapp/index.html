@@ -5,242 +5,255 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>CMD Center</title>
 <style>
-  :root { --bg:#06090f; --panel:#0f1525; --muted:#8b9bb4; --fg:#e8edf5; --accent:#00e5ff; --accent2:#b388ff; --danger:#ff5252; --ok:#69f0ae; --warn:#ffd740; --border:#1a243d; }
+  :root {
+    --bg:#05080e; --panel:#0c1322; --panel2:#0f192b; --muted:#7d8fa8; --fg:#e6ecf6;
+    --accent:#00e5ff; --accent2:#b388ff; --danger:#ff5252; --ok:#69f0ae; --warn:#ffd740;
+    --border:#162038; --shadow:rgba(0,0,0,0.45);
+  }
   * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
-  html,body { height:100%; background:var(--bg); color:var(--fg); font:16px/1.3 ui-monospace,SFMono-Regular,Menlo,Consolas,"DejaVu Sans Mono",monospace; overflow:hidden; touch-action:manipulation; }
-  .topbar { display:flex; align-items:center; gap:12px; padding:10px 14px; background:linear-gradient(180deg,#0b1020,var(--bg)); border-bottom:1px solid var(--border); }
-  .title { font-weight:800; font-size:18px; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); }
-  .tabs { display:flex; gap:8px; flex:1; overflow-x:auto; }
-  .tab { padding:10px 14px; border-radius:12px; border:1px solid var(--border); background:var(--panel); color:var(--muted); cursor:pointer; font-weight:700; font-size:12px; letter-spacing:.08em; text-transform:uppercase; white-space:nowrap; text-decoration:none; }
-  .tab.active { background:linear-gradient(180deg,#0b2a3d,#0f172a); color:var(--accent); border-color:#0ea5e9; }
-  .view { display:none; height:calc(100% - 52px); overflow:auto; padding:14px; }
+  html,body { height:100%; background:var(--bg); color:var(--fg);
+    font:16px/1.25 ui-monospace,Menlo,Consolas,"DejaVu Sans Mono",monospace;
+    overflow:hidden; touch-action:manipulation; }
+
+  .topbar { display:flex; align-items:center; gap:14px; padding:12px 16px;
+    background:linear-gradient(180deg,#0a1020,var(--bg)); border-bottom:1px solid var(--border); }
+  .title { font-weight:900; font-size:20px; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--accent); text-shadow:0 0 18px rgba(0,229,255,0.35); }
+  .tabs { display:flex; gap:10px; flex:1; overflow-x:auto; }
+  .tab { padding:10px 16px; border-radius:14px; border:1px solid var(--border); background:var(--panel);
+    color:var(--muted); cursor:pointer; font-weight:800; font-size:12px; letter-spacing:.1em;
+    text-transform:uppercase; white-space:nowrap; text-decoration:none; }
+  .tab.active { background:linear-gradient(180deg,#0c2a3f,#11223a); color:var(--accent);
+    border-color:#0ea5e9; box-shadow:0 0 14px rgba(14,165,233,0.25); }
+
+  .view { display:none; height:calc(100% - 58px); overflow:auto; padding:14px; }
   .view.active { display:block; }
-  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-  .grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+  .wrap { max-width:1400px; margin:0 auto; }
+
+  /* ---------- GAUGE CLUSTER ---------- */
+  .cluster { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+  .gauge { background:linear-gradient(180deg,var(--panel),var(--panel2)); border:1px solid var(--border);
+    border-radius:16px; padding:14px 16px; min-height:104px; display:flex; flex-direction:column;
+    justify-content:space-between;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.04), 0 10px 24px var(--shadow); }
+  .gauge .label { font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
+  .gauge .value { font-size:26px; font-weight:900; margin-top:4px; }
+  .gauge .sub { font-size:12px; color:var(--muted); margin-top:2px; }
+  .gauge.c-cpu .value   { color:var(--accent); text-shadow:0 0 12px rgba(0,229,255,0.4); }
+  .gauge.c-ram .value   { color:var(--accent2); text-shadow:0 0 12px rgba(179,136,255,0.4); }
+  .gauge.c-ok .value    { color:var(--ok); }
+  .gauge.c-warn .value  { color:var(--warn); }
+  .gauge.c-danger .value{ color:var(--danger); }
+  .bar-wrap { margin-top:10px; height:8px; background:#08101d; border-radius:999px;
+    border:1px solid var(--border); overflow:hidden; }
+  .bar { height:100%; border-radius:999px; background:linear-gradient(90deg,#0ea5e9,#22d3ee);
+    width:0%; transition:width .6s ease; }
+  .bar.hot { background:linear-gradient(90deg,#f59e0b,#ef4444); }
+
+  .row2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:14px; }
   .section { display:flex; flex-direction:column; gap:10px; }
-  .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-  .btn { appearance:none; border:1px solid var(--border); background:#0b1220; color:var(--fg); padding:14px 16px; border-radius:12px; cursor:pointer; min-height:52px; display:inline-flex; align-items:center; justify-content:center; gap:8px; font-weight:700; font-size:13px; letter-spacing:.06em; text-transform:uppercase; text-decoration:none; }
+  .group-title { font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin:6px 0; }
+  .row { display:flex; gap:10px; flex-wrap:wrap; }
+  .btn { appearance:none; border:1px solid var(--border); background:#0b1220; color:var(--fg);
+    padding:12px 16px; border-radius:12px; cursor:pointer; min-height:48px; display:inline-flex;
+    align-items:center; justify-content:center; font-weight:700; font-size:13px;
+    letter-spacing:.06em; text-transform:uppercase; text-decoration:none; }
   .btn:active { transform:translateY(1px); filter:brightness(1.3); }
-  .btn.accent { background:linear-gradient(180deg,#0ea5e9,#22d3ee); color:#022c22; border-color:#0ea5e9; }
-  .btn.danger { background:linear-gradient(180deg,#b91c1c,#ef4444); color:#fff; border-color:#ef4444; }
-  .kv { display:flex; justify-content:space-between; gap:10px; font-size:13px; }
-  .kv b { color:var(--accent2); font-weight:700; }
-  .stat { background:#0b1220; border:1px solid var(--border); border-radius:12px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; }
-  .metric { color:var(--accent); font-weight:800; font-size:13px; letter-spacing:.04em; }
-  .metric.purple { color:var(--accent2); }
-  .bar-wrap { height:8px; background:#0b1220; border-radius:999px; border:1px solid var(--border); overflow:hidden; }
-  .bar { height:100%; border-radius:999px; background:linear-gradient(90deg,#0ea5e9,#22d3ee); width:0%; transition:width .5s; }
-  .bar.warn { background:linear-gradient(90deg,#f59e0b,#ef4444); }
-  video, audio { width:100%; background:#000; border-radius:10px; border:1px solid var(--border); }
-  video#localVideo { transform:scaleX(-1); }
-  #toast { position:fixed; left:50%; bottom:20px; transform:translateX(-50%); background:#0b1220; border:1px solid var(--border); color:var(--fg); padding:12px 18px; border-radius:999px; opacity:0; transition:opacity .2s; pointer-events:none; z-index:50; font-weight:700; font-size:12px; letter-spacing:.06em; text-transform:uppercase; }
-  #toast.show { opacity:1; }
+  .btn.danger { border-color:#ef4444; color:#ff8a8a; }
+  .btn.accent { border-color:#0ea5e9; color:var(--accent); }
+
+  .terminal-output { background:#070a10; border:1px solid var(--border); border-radius:10px;
+    padding:10px; font-size:11px; color:#a5b4fc; height:150px; overflow:auto;
+    white-space:pre-wrap; word-break:break-all; }
+  .empty { color:var(--muted); font-style:italic; }
+
+  /* ---------- STREAM DECK ---------- */
+  .deck { display:grid; grid-template-columns:repeat(auto-fill,minmax(128px,1fr)); gap:12px; }
+  .deck-btn { appearance:none; border:1px solid var(--border);
+    background:linear-gradient(180deg,#0d1526,#0a1120); color:var(--fg); padding:14px 10px;
+    border-radius:14px; cursor:pointer; min-height:92px; width:100%;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
+    font-weight:800; font-size:12px; letter-spacing:.08em; text-transform:uppercase;
+    text-decoration:none; font-family:inherit; box-shadow:0 8px 18px var(--shadow); }
+  .deck-btn:active { transform:translateY(2px); filter:brightness(1.4); }
+  .deck-btn .icon { font-size:24px; line-height:1; }
+  .deck-btn.accent { background:linear-gradient(180deg,#0c2a3f,#0b1e34); border-color:#0ea5e9; color:#dffffa; }
+  .deck-btn.accent2 { background:linear-gradient(180deg,#1a1740,#151235); border-color:#b388ff; color:#f4eaff; }
+  .deck-btn.danger { background:linear-gradient(180deg,#2a1216,#220e12); border-color:#ef4444; color:#fff0f0; }
+  .deck-btn.ok { background:linear-gradient(180deg,#0f231b,#0c1a15); border-color:#69f0ae; color:#e6fff2; }
+  .deck-inline { display:contents; }
+
   table { width:100%; border-collapse:collapse; font-size:12px; }
   th,td { text-align:left; padding:8px 6px; border-bottom:1px solid var(--border); }
   th { color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.1em; font-size:11px; }
-  .wrap { overflow:auto; }
-  .empty { color:var(--muted); font-style:italic; font-size:12px; }
-  .terminal-output { background:#070a10; border:1px solid var(--border); border-radius:10px; padding:10px; font-size:11px; color:#a5b4fc; height:160px; overflow:auto; white-space:pre-wrap; word-break:break-all; }
-  .group-title { font-size:11px; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); margin:6px 0 4px; }
+  .kv { display:flex; justify-content:space-between; gap:10px; font-size:13px; padding:4px 0; }
+  .kv b { color:var(--accent2); font-weight:700; }
+  .metric { color:var(--accent); font-weight:800; }
+
+  #toast { position:fixed; left:50%; bottom:20px; transform:translateX(-50%);
+    background:#0b1220; border:1px solid var(--border); color:var(--fg); padding:12px 18px;
+    border-radius:999px; opacity:0; transition:opacity .2s; pointer-events:none; z-index:50;
+    font-weight:700; font-size:12px; letter-spacing:.06em; text-transform:uppercase; }
+  #toast.show { opacity:1; }
   .error { position:fixed; top:0; left:0; right:0; background:#b91c1c; color:#fff; padding:8px; font-size:11px; z-index:9999; display:none; }
+  iframe[name=cmdframe] { display:none; width:0; height:0; border:0; }
 </style>
 </head>
 <body>
 <div class="error" id="error"></div>
+<iframe name="cmdframe"></iframe>
+
 <div class="topbar">
-  <div class="title">CMD</div>
+  <div class="title">CMD Center</div>
   <div class="tabs">
     <a class="tab active" href="#dashboard">Dashboard</a>
+    <a class="tab" href="#deck">Stream Deck</a>
     <a class="tab" href="#monitor">Monitor</a>
-    <a class="tab" href="#tools">Tools</a>
-    <a class="tab" href="#av">AV</a>
   </div>
+  <a class="tab" href="/system/lock">🔒 Lock</a>
 </div>
 
+<!-- ============ DASHBOARD ============ -->
 <div class="view active" id="dashboard">
-  <div class="grid3">
-    <div class="section">
-      <div class="group-title">System</div>
-      <div class="stat"><span>CPU</span><span class="metric" id="cpu">—</span></div>
-      <div class="bar-wrap"><div class="bar" id="cpuBar"></div></div>
-      <div class="stat"><span>RAM</span><span class="metric purple" id="ram">—</span></div>
-      <div class="bar-wrap"><div class="bar" id="ramBar"></div></div>
-      <div class="stat"><span>Disk /</span><span class="metric" id="disk">—</span></div>
-      <div class="bar-wrap"><div class="bar" id="diskBar"></div></div>
-      <div class="stat"><span>GPU</span><span class="metric" id="gpu">—</span></div>
-      <div class="bar-wrap"><div class="bar" id="gpuBar"></div></div>
-      <div class="stat"><span>Uptime</span><span class="metric" id="uptime">—</span></div>
-      <div class="stat"><span>Users</span><span class="metric" id="users">—</span></div>
-      <div class="stat"><span>Network</span><span class="metric" id="net">—</span></div>
+  <div class="wrap">
+    <div class="cluster">
+      <div class="gauge c-cpu">
+        <div><div class="label">CPU</div><div class="value" id="cpu">—</div></div>
+        <div><div class="sub" id="cpuSub"></div><div class="bar-wrap"><div class="bar" id="cpuBar"></div></div></div>
+      </div>
+      <div class="gauge c-ram">
+        <div><div class="label">RAM</div><div class="value" id="ram">—</div></div>
+        <div><div class="sub" id="ramSub"></div><div class="bar-wrap"><div class="bar" id="ramBar"></div></div></div>
+      </div>
+      <div class="gauge">
+        <div><div class="label">Disk /</div><div class="value" id="disk">—</div></div>
+        <div><div class="sub" id="diskSub"></div><div class="bar-wrap"><div class="bar" id="diskBar"></div></div></div>
+      </div>
+      <div class="gauge">
+        <div><div class="label">GPU</div><div class="value" id="gpu">—</div></div>
+        <div><div class="sub" id="gpuSub"></div><div class="bar-wrap"><div class="bar" id="gpuBar"></div></div></div>
+      </div>
+      <div class="gauge c-ok" id="tempCard">
+        <div><div class="label">CPU Temp</div><div class="value" id="cpuTemp">—</div></div>
+        <div><div class="sub" id="fanSub">thermals</div></div>
+      </div>
+      <div class="gauge">
+        <div><div class="label">Network</div><div class="value" id="netIface" style="font-size:18px">—</div></div>
+        <div><div class="sub" id="netAddr"></div></div>
+      </div>
+      <div class="gauge">
+        <div><div class="label">Sessions</div><div class="value" id="users">—</div></div>
+        <div><div class="sub" id="usersSub"></div></div>
+      </div>
+      <div class="gauge">
+        <div><div class="label">Uptime</div><div class="value" id="uptime" style="font-size:16px">—</div></div>
+        <div><div class="sub" id="loadSub"></div></div>
+      </div>
     </div>
-    <div class="section">
-      <div class="group-title">Quick Actions</div>
-      <div class="row">
-        <a class="btn" href="/apps/terminal">Terminal</a>
-        <a class="btn" href="/apps/files">Files</a>
-        <a class="btn" href="/apps/browser">Browser</a>
-        <a class="btn" href="/apps/editor">Editor</a>
-        <a class="btn" href="/system/lock">Lock</a>
-        <a class="btn" href="/system/sleep">Sleep</a>
-        <a class="btn" href="/system/logout">Logout</a>
+
+    <div class="row2">
+      <div class="section">
+        <div class="group-title">Logs</div>
+        <div class="row">
+          <a class="btn" href="/logs?path=journal&n=120">Journal</a>
+          <a class="btn" href="/logs?path=/var/log/dpkg.log&n=120">Dpkg</a>
+          <a class="btn" href="/logs?path=/var/log/boot.log&n=120">Boot</a>
+          <a class="btn" href="/logs?path=/var/log/Xorg.0.log&n=120">Xorg</a>
+        </div>
+        <pre id="logView" class="terminal-output empty">Tap a log above</pre>
       </div>
-      <div class="group-title">Terminal</div>
-      <div class="row">
-        <a class="btn" href="/run?command=xfce4-terminal%20--%20htop">htop</a>
-        <a class="btn" href="/run?command=xfce4-terminal%20--%20btop">btop</a>
-        <a class="btn" href="/run?command=xfce4-terminal%20--%20bash%20-lc%20%27docker%20ps%20-a%3B%20read%27">Docker</a>
-        <a class="btn" href="/run?command=xfce4-terminal%20--%20bash%20-lc%20%27ss%20-tulpn%3B%20read%27">Netstat</a>
-        <a class="btn" href="/run?command=xfce4-terminal%20--%20bash%20-lc%20%27journalctl%20-p%20err%20-n%2050%20--no-pager%3B%20read%27">Journal</a>
-        <a class="btn" href="/run?command=xfce4-terminal%20--%20bash%20-lc%20%27df%20-h%3B%20read%27">Disk</a>
-      </div>
-      <div class="group-title">Logs</div>
-      <div class="row">
-        <a class="btn" href="/logs?path=journal&n=120">Journal</a>
-        <a class="btn" href="/logs?path=/var/log/dpkg.log&n=120">Dpkg</a>
-        <a class="btn" href="/logs?path=/var/log/boot.log&n=120">Boot</a>
-        <a class="btn" href="/logs?path=/var/log/lightdm&n=120">LightDM</a>
-      </div>
-      <pre id="logView" class="empty terminal-output">Tap a log above</pre>
-    </div>
-    <div class="section">
-      <div class="group-title">Workspace</div>
-      <div class="row" id="wsButtons">loading</div>
-      <div class="group-title">Apps</div>
-      <div class="row">
-        <a class="btn" href="/launch?app=firefox">Firefox</a>
-        <a class="btn" href="/launch?app=thunar">Files</a>
-        <a class="btn" href="/launch?app=xfce4-terminal">Terminal</a>
-        <a class="btn" href="/launch?app=mousepad">Editor</a>
-        <a class="btn" href="/launch?app=xfce4-calculator">Calc</a>
-        <a class="btn" href="/launch?app=xfce4-settings-manager">Settings</a>
-      </div>
-      <div class="group-title">Media</div>
-      <div class="row">
-        <a class="btn" href="/media/prev">Prev</a>
-        <a class="btn accent" href="/media/play">Play</a>
-        <a class="btn" href="/media/pause">Pause</a>
-        <a class="btn" href="/media/next">Next</a>
-      </div>
-      <div class="kv"><span>Vol</span><span class="metric" id="volLabel">50%</span></div>
-      <form onsubmit="event.preventDefault();var v=document.getElementById('volRange').value;fetch('/media/volume',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({volume:Number(v)})}).then(function(){toast('Vol '+v+'%');}).catch(function(){toast('err');});" style="display:flex;gap:10px;align-items:center">
-        <input type="range" id="volRange" min="0" max="100" value="50" style="flex:1" oninput="document.getElementById('volLabel').textContent=this.value+'%'">
-        <button class="btn" type="submit">Set</button>
-      </form>
-      <div class="row">
-        <a class="btn" href="/media/mute">Mute</a>
-        <a class="btn" href="/media/unmute">Unmute</a>
+      <div class="section">
+        <div class="group-title">Workspaces</div>
+        <div class="row" id="wsButtons"><span class="empty">loading…</span></div>
+        <div class="group-title">Quick Power</div>
+        <div class="row">
+          <a class="btn" href="/system/sleep">💤 Sleep</a>
+          <a class="btn danger" href="/system/reboot">🔄 Reboot</a>
+          <a class="btn danger" href="/system/shutdown">⏻ Shutdown</a>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
+<!-- ============ STREAM DECK ============ -->
+<div class="view" id="deck">
+  <div class="wrap">
+    <div class="group-title">Apps</div>
+    <div class="deck">
+      <a class="deck-btn accent" href="/launch?app=firefox"><div class="icon">🌐</div><div>Firefox</div></a>
+      <a class="deck-btn" href="/launch?app=files"><div class="icon">📁</div><div>Files</div></a>
+      <a class="deck-btn" href="/launch?app=terminal"><div class="icon">⌨️</div><div>Terminal</div></a>
+      <a class="deck-btn" href="/launch?app=vlc"><div class="icon">🎬</div><div>VLC</div></a>
+      <a class="deck-btn accent2" href="/launch?app=steam"><div class="icon">🎮</div><div>Steam</div></a>
+      <a class="deck-btn" href="/launch?app=taskmanager"><div class="icon">📊</div><div>Task Mgr</div></a>
+      <a class="deck-btn" href="/launch?app=bluetooth"><div class="icon">🔵</div><div>Bluetooth</div></a>
+      <a class="deck-btn" href="/launch?app=network"><div class="icon">📶</div><div>Network</div></a>
+      <a class="deck-btn" href="/launch?app=editor"><div class="icon">📝</div><div>Editor</div></a>
+      <a class="deck-btn" href="/launch?app=settings"><div class="icon">⚙️</div><div>Settings</div></a>
+    </div>
+
+    <div class="group-title" style="margin-top:18px">Diagnostics</div>
+    <div class="deck">
+      <a class="deck-btn ok" href="/run?command=nvidia-smi&terminal=1"><div class="icon">🖥️</div><div>nvidia-smi</div></a>
+      <a class="deck-btn ok" href="/run?command=journalctl%20-p%20err%20-n%20100%20--no-pager&terminal=1"><div class="icon">🧯</div><div>Journal Err</div></a>
+      <a class="deck-btn ok" href="/run?command=df%20-h&terminal=1"><div class="icon">💾</div><div>Disk Free</div></a>
+      <a class="deck-btn ok" href="/run?command=ss%20-tulpn&terminal=1"><div class="icon">🌍</div><div>Ports</div></a>
+      <a class="deck-btn ok" href="/run?command=docker%20ps%20-a&terminal=1"><div class="icon">🐳</div><div>Docker</div></a>
+      <a class="deck-btn ok" href="/run?command=ping%20-c%205%208.8.8.8&terminal=1"><div class="icon">📡</div><div>Ping</div></a>
+      <a class="deck-btn ok" href="/run?command=nmcli%20dev%20wifi%20list&terminal=1"><div class="icon">📶</div><div>WiFi Scan</div></a>
+      <a class="deck-btn ok" href="/run?command=free%20-h&terminal=1"><div class="icon">🧠</div><div>Free RAM</div></a>
+    </div>
+
+    <div class="group-title" style="margin-top:18px">Maintenance</div>
+    <div class="deck">
+      <a class="deck-btn" href="/run?command=sudo%20apt%20update%20%26%26%20sudo%20apt%20upgrade%20-y&terminal=1"><div class="icon">🔄</div><div>Updates</div></a>
+      <a class="deck-btn danger" href="/run?command=docker%20system%20prune%20-af%20--volumes&terminal=1"><div class="icon">🧹</div><div>Docker Clean</div></a>
+      <a class="deck-btn" href="/run?command=ncdu%20/&terminal=1"><div class="icon">📦</div><div>ncdu</div></a>
+      <a class="deck-btn" href="/run?command=speedtest&terminal=1"><div class="icon">🚀</div><div>Speedtest</div></a>
+      <a class="deck-btn" href="/capture/screenshot"><div class="icon">📸</div><div>Screenshot</div></a>
+    </div>
+
+    <div class="group-title" style="margin-top:18px">Power</div>
+    <div class="deck">
+      <a class="deck-btn" href="/system/lock"><div class="icon">🔒</div><div>Lock</div></a>
+      <a class="deck-btn" href="/system/sleep"><div class="icon">💤</div><div>Sleep</div></a>
+      <a class="deck-btn" href="/system/logout"><div class="icon">🚪</div><div>Logout</div></a>
+      <a class="deck-btn danger" href="/system/reboot"><div class="icon">🔄</div><div>Reboot</div></a>
+      <a class="deck-btn danger" href="/system/shutdown"><div class="icon">⏻</div><div>Shutdown</div></a>
+    </div>
+
+    <div class="group-title" style="margin-top:18px">Media</div>
+    <div class="deck">
+      <a class="deck-btn" href="/media/voldown"><div class="icon">🔉</div><div>Vol −</div></a>
+      <a class="deck-btn" href="/media/prev"><div class="icon">⏮</div><div>Prev</div></a>
+      <a class="deck-btn accent" href="/media/play"><div class="icon">▶️</div><div>Play</div></a>
+      <a class="deck-btn" href="/media/pause"><div class="icon">⏸</div><div>Pause</div></a>
+      <a class="deck-btn" href="/media/next"><div class="icon">⏭</div><div>Next</div></a>
+      <a class="deck-btn" href="/media/volup"><div class="icon">🔊</div><div>Vol +</div></a>
+      <a class="deck-btn" href="/media/mute"><div class="icon">🔇</div><div>Mute</div></a>
+      <a class="deck-btn" href="/media/unmute"><div class="icon">🔔</div><div>Unmute</div></a>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MONITOR ============ -->
 <div class="view" id="monitor">
-  <div class="grid2">
-    <div class="section">
-      <div class="group-title">Processes <span id="procCount" style="float:right;color:var(--accent)"></span></div>
-      <div class="wrap" style="flex:1;min-height:0">
+  <div class="wrap">
+    <div class="row2">
+      <div class="section">
+        <div class="group-title">Top Processes</div>
         <table>
           <thead><tr><th>PID</th><th>CPU%</th><th>MEM%</th><th>Name</th></tr></thead>
-          <tbody id="procTable"></tbody>
+          <tbody id="procTable"><tr><td colspan="4" class="empty">loading…</td></tr></tbody>
         </table>
       </div>
+      <div class="section">
+        <div class="group-title">Network</div>
+        <div id="netInfo" class="terminal-output" style="height:auto">loading…</div>
+        <div class="group-title">System</div>
+        <div id="sysInfo" class="terminal-output" style="height:auto">loading…</div>
     </div>
-    <div class="section">
-      <div class="group-title">Network</div>
-      <div id="netInfo">loading</div>
-      <div class="group-title">Raw</div>
-      <pre id="netRaw" class="terminal-output">loading</pre>
-    </div>
-  </div>
-</div>
-
-<div class="view" id="tools">
-  <div class="grid2">
-    <div class="section">
-      <div class="group-title">Macros</div>
-      <div class="row">
-        <a class="btn" href="/run?command=xfce4-terminal%20--%20bash%20-lc%20%27echo%20===%20CPU%3B%20lscpu%20%7C%20grep%20Name%3B%20echo%20===%20RAM%3B%20free%20-h%3B%20echo%20===%20DISK%3B%20df%20-h%20%2F%3B%20echo%20===%20GPU%3B%20nvidia-smi%3B%20echo%20===%20NET%3B%20ip%20-br%20addr%3B%20read%27">Diagnostics</a>
-        <a class="btn" href="/run?command=xfce4-terminal%20--%20bash%20-lc%20%27sudo%20apt%20update%20%26%26%20sudo%20apt%20upgrade%20-y%20%26%26%20sudo%20apt%20autoremove%20-y%3B%20read%27">Updates</a>
-        <a class="btn" href="/run?command=xfce4-terminal%20--%20bash%20-lc%20%27docker%20system%20prune%20-af%20--volumes%3B%20read%27">Docker Clean</a>
-        <a class="btn" href="/run?command=xfce4-terminal%20--%20bash%20-lc%20%27journalctl%20-p%20err%20-n%20100%20--no-pager%3B%20read%27">Journal Errors</button></form>
-        <form method="post" target="cmdframe" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'curl -s https://install.speedtest.net/app/cli/install.deb.sh | sudo bash && speedtest; read'"><button class="btn" type="submit">Speedtest</button></form>
-        <form method="post" target="cmdframe" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'ping -c 5 8.8.8.8; read'"><button class="btn" type="submit">Ping Google</button></form>
-      </div>
-      <div class="group-title">Shortcuts</div>
-      <div>
-        <div><kbd style="background:#1a243d;border:1px solid var(--border);border-radius:6px;padding:2px 6px;font-size:10px;color:var(--accent);font-weight:700">Ctrl+Alt+T</kbd> Open terminal</div>
-        <div><kbd style="background:#1a243d;border:1px solid var(--border);border-radius:6px;padding:2px 6px;font-size:10px;color:var(--accent);font-weight:700">Ctrl+Alt+L</kbd> Lock screen</div>
-        <div><kbd style="background:#1a243d;border:1px solid var(--border);border-radius:6px;padding:2px 6px;font-size:10px;color:var(--accent);font-weight:700">Alt+F2</kbd> Run command</div>
-        <div><kbd style="background:#1a243d;border:1px solid var(--border);border-radius:6px;padding:2px 6px;font-size:10px;color:var(--accent);font-weight:700">Super+Tab</kbd> Switch workspace</div>
-        <div><kbd style="background:#1a243d;border:1px solid var(--border);border-radius:6px;padding:2px 6px;font-size:10px;color:var(--accent);font-weight:700">Print</kbd> Screenshot</div>
-      </div>
-    </div>
-    <div class="section">
-      <div class="group-title">Utilities</div>
-      <div class="row">
-        <a class="btn" href="/run?command=xfce4-terminal%20--%20htop">htop</a>
-        <a class="btn" href="/run?command=xfce4-terminal%20--%20btop">btop</a>
-        <form method="post" target="cmdframe" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'ncdu /; read'"><button class="btn" type="submit">ncdu</button></form>
-        <form method="post" target="cmdframe" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'ping -c 5 8.8.8.8; read'"><button class="btn" type="submit">Ping Google</button></form>
-        <form method="post" target="cmdframe" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'nmcli dev wifi list; read'"><button class="btn" type="submit">Wifi Scan</button></form>
-        <form method="post" target="cmdframe" action="/command/run"><input type="hidden" name="command" value="xfce4-terminal -- bash -lc 'nmcli con show; read'"><button class="btn" type="submit">Connections</button></form>
-      </div>
-      <div class="group-title">System</div>
-      <div class="row">
-        <a class="btn" href="/system/lock">Lock</a>
-        <a class="btn" href="/system/sleep">Sleep</a>
-        <a class="btn" href="/system/logout">Logout</a>
-        <a class="btn" href="/system/reboot">Reboot</a>
-        <a class="btn" href="/system/shutdown">Shutdown</a>
-      </div>
-      <div class="group-title">Capture</div>
-      <div class="row">
-        <a class="btn" href="/capture/screenshot">Screenshot</a>
-        <a class="btn" href="/capture/record?action=toggle">Record Start</a>
-        <a class="btn" href="/capture/record?action=stop">Record Stop</a>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="view" id="av">
-  <div class="grid3">
-    <div class="section">
-      <div class="group-title">Camera / Mic</div>
-      <div class="kv"><span><b>Cam</b> tablet</span><span id="camState" class="metric" style="color:var(--muted)">off</span></div>
-      <div class="kv"><span><b>Mic</b> tablet</span><span id="micState" class="metric" style="color:var(--muted)">off</span></div>
-      <div class="row">
-        <button class="btn accent" onclick="navigator.mediaDevices.getUserMedia({video:{width:{ideal:1280},height:{ideal:720},frameRate:{ideal:30}},audio:true}).then(function(s){document.getElementById('localVideo').srcObject=s;var c=document.getElementById('camState');if(c){c.textContent='on';c.style.color='var(--ok)';}var m=document.getElementById('micState');if(m){m.textContent='on';m.style.color='var(--ok)';}var t=document.getElementById('toast');if(t){t.textContent='AV on';t.classList.add('show');setTimeout(function(){t.classList.remove('show');},1400);}}).catch(function(){var t=document.getElementById('toast');if(t){t.textContent='AV err';t.classList.add('show');setTimeout(function(){t.classList.remove('show');},1400);}});">Start AV</button>
-        <button class="btn danger" onclick="var s=document.getElementById('localVideo').srcObject;if(s)s.getTracks().forEach(function(t){t.stop();});document.getElementById('localVideo').srcObject=null;var c=document.getElementById('camState');if(c){c.textContent='off';c.style.color='var(--muted)';}var m=document.getElementById('micState');if(m){m.textContent='off';m.style.color='var(--muted)';}var t=document.getElementById('toast');if(t){t.textContent='AV off';t.classList.add('show');setTimeout(function(){t.classList.remove('show');},1400);}">Stop</button>
-      </div>
-      <video id="localVideo" autoplay playsinline muted></video>
-    </div>
-    <div class="section">
-      <div class="group-title">Screen Capture</div>
-      <div class="row">
-        <a class="btn" href="/capture/screenshot">Screenshot</a>
-        <a class="btn" href="/capture/record?action=toggle">Record Start</a>
-        <a class="btn" href="/capture/record?action=stop">Record Stop</a>
-      </div>
-      <pre id="captureStatus" class="terminal-output">Idle</pre>
-    </div>
-    <div class="section">
-      <div class="group-title">Media</div>
-      <div class="row">
-        <a class="btn" href="/media/prev">Prev</a>
-        <a class="btn accent" href="/media/play">Play</a>
-        <a class="btn" href="/media/pause">Pause</a>
-        <a class="btn" href="/media/next">Next</a>
-      </div>
-      <div class="kv"><span>Vol</span><span class="metric" id="volLabel2">50%</span></div>
-      <form onsubmit="event.preventDefault();var v=document.getElementById('volRange2').value;fetch('/media/volume',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({volume:Number(v)})}).then(function(){toast('Vol '+v+'%');}).catch(function(){toast('err');});" style="display:flex;gap:10px;align-items:center">
-        <input type="range" id="volRange2" min="0" max="100" value="50" style="flex:1" oninput="document.getElementById('volLabel2').textContent=this.value+'%'">
-        <button class="btn" type="submit">Set</button>
-      </form>
-      <div class="row">
-        <a class="btn" href="/media/mute">Mute</a>
-        <a class="btn" href="/media/unmute">Unmute</a>
-      </div>
     </div>
   </div>
 </div>
@@ -249,83 +262,113 @@
 <script>
 (function(){
   try {
-function post(url){fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).then(function(r){if(!r.ok) throw new Error(r.statusText); toast('ok');}).catch(function(e){toast('err: '+e.message);});}
-    function action(url,data){fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data||{})}).then(function(r){if(!r.ok) throw new Error(r.statusText); toast('ok');}).catch(function(e){toast('err: '+e.message);});}
-    function postForm(url,data){fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data||{})}).then(function(r){if(!r.ok) throw new Error(r.statusText); toast('ok');}).catch(function(e){toast('err: '+e.message);});}
-    function cmd(command){action('/command/run',{command:command});}
-    function loadLog(path,n){fetch('/logs?path='+encodeURIComponent(path)+'&n='+(n||80)).then(function(r){return r.json();}).then(function(d){var el=document.getElementById('logView');if(el){el.textContent=d.text||'empty';}}).catch(function(e){toast('log err');});}
-        var $ = function(s){ return document.querySelector(s); };
-    var API = location.origin;
-    function postJSON(url,data){fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data||{})}).catch(function(){});}
-    var toast = function(msg){ var t=$('#toast'); if(!t) return; t.textContent=msg; t.classList.add('show'); setTimeout(function(){ t.classList.remove('show'); },1400); };
+    var $ = function(s){ return document.querySelector(s); };
+    var toast = function(msg){ var t=$('#toast'); if(!t) return; t.textContent=msg;
+      t.classList.add('show'); setTimeout(function(){ t.classList.remove('show'); },1400); };
 
+    // tabs (enhancement only — dashboard works without JS)
     function showView(id){
-      var views = document.querySelectorAll('.view');
+      var views=document.querySelectorAll('.view');
       for(var i=0;i<views.length;i++) views[i].classList.remove('active');
-      var el = $('#' + id); if(el) el.classList.add('active');
-      var tabs = document.querySelectorAll('.tab');
-      for(var i=0;i<tabs.length;i++){ tabs[i].classList.toggle('active', tabs[i].getAttribute('href') === '#'+id); }
+      var el=$('#'+id); if(el) el.classList.add('active');
+      var tabs=document.querySelectorAll('.tab');
+      for(var i=0;i<tabs.length;i++) tabs[i].classList.toggle('active', tabs[i].getAttribute('href')==='#'+id);
+      try { location.hash=id; } catch(e){}
     }
-    var tabs = document.querySelectorAll('.tab');
+    var tabs=document.querySelectorAll('.tab');
     for(var i=0;i<tabs.length;i++){
       tabs[i].addEventListener('click', function(e){
-        e.preventDefault();
-        var href = this.getAttribute('href');
-        if(href && href.charAt(0)==='#') showView(href.substring(1));
+        var href=this.getAttribute('href')||'';
+        if(href.charAt(0)==='#'){ e.preventDefault(); showView(href.substring(1)); }
       });
     }
+    if(location.hash){ var v=location.hash.substring(1); if($('#'+v)) showView(v); }
+    window.addEventListener('hashchange', function(){
+      var v=location.hash.substring(1);
+      if(v && $('#'+v)) showView(v);
+    });
 
-    function fmtBar(pct){ return Math.max(0,Math.min(100,pct)) + '%'; }
+    function setBar(barId,pct){
+      var b=$(barId); if(!b) return;
+      pct=Math.max(0,Math.min(100,pct));
+      b.style.width=pct+'%';
+      b.className='bar'+(pct>90?' hot':'');
+    }
+
     function refresh(){
       fetch('/system/status').then(function(r){ if(!r.ok) throw new Error(r.statusText); return r.json(); }).then(function(s){
-        var cpu = parseFloat(String(s.cpu||'0').replace('%','')) || 0;
-        var cpuEl = $('#cpu'); if(cpuEl) cpuEl.textContent = s.cpu;
-        var cpuBar = $('#cpuBar'); if(cpuBar){ cpuBar.style.width = fmtBar(cpu); cpuBar.className = 'bar' + (cpu>90?' warn':''); }
-        var ramEl = $('#ram'); if(ramEl) ramEl.textContent = (s.ram_pct||0) + '%';
-        var ramBar = $('#ramBar'); if(ramBar){ ramBar.style.width = fmtBar(s.ram_pct||0); ramBar.className = 'bar' + ((s.ram_pct||0)>90?' warn':''); }
-        var diskEl = $('#disk'); if(diskEl) diskEl.textContent = (s.disk_pct||0) + '% ' + (s.disk_used||'—') + '/' + (s.disk_total||'—');
-        var diskBar = $('#diskBar'); if(diskBar){ diskBar.style.width = fmtBar(s.disk_pct||0); diskBar.className = 'bar' + ((s.disk_pct||0)>95?' warn':''); }
-        var gpuEl = $('#gpu'); if(gpuEl) gpuEl.textContent = (s.gpu_pct||0) + '%' + (s.gpu_temp ? ' @ ' + s.gpu_temp + 'C' : '');
-        var gpuBar = $('#gpuBar'); if(gpuBar){ gpuBar.style.width = fmtBar(s.gpu_pct||0); gpuBar.className = 'bar' + ((s.gpu_temp||0)>85?' warn':''); }
-        var upEl = $('#uptime'); if(upEl) upEl.textContent = s.uptime || '—';
-        var usersEl = $('#users'); if(usersEl) usersEl.textContent = s.users || '—';
-        var netEl = $('#net'); if(netEl) netEl.textContent = (s.network||'—').split(';').filter(function(x){ return x.trim() && !x.trim().startsWith('docker') && !x.trim().startsWith('veth'); }).join('; ') || '—';
-        var pt = $('#procTable'); if(pt){ pt.innerHTML=''; var procs=s.processes||[]; for(var i=0;i<procs.length;i++){ var p=procs[i]; var tr=document.createElement('tr'); tr.innerHTML='<td>'+p.pid+'</td><td>'+p.cpu+'</td><td>'+p.mem+'</td><td>'+p.name+'</td>'; pt.appendChild(tr); } }
-        var pc = $('#procCount'); if(pc) pc.textContent = (s.processes||[]).length + ' procs';
-        var nr = $('#netRaw'); if(nr) nr.textContent = s.network || '—';
-        var ni = $('#netInfo'); if(ni){ ni.innerHTML=''; var rows=[ ['Users',s.users],['Uptime',s.uptime],['Top CPU',(s.top_cpu||[]).map(function(x){return x.name+':'+x.pct+'%';}).join(' | ')||'—'],['Top MEM',(s.top_mem||[]).map(function(x){return x.name+':'+x.pct+'%';}).join(' | ')||'—'] ]; for(var i=0;i<rows.length;i++){ var d=document.createElement('div'); d.className='kv'; d.innerHTML='<span>'+rows[i][0]+'</span><span class="metric">'+rows[i][1]+'</span>'; ni.appendChild(d); } }
-      }).catch(function(e){ var d=$('#error'); if(d){ d.style.display='block'; d.textContent='refresh err: '+e.message; setTimeout(function(){ d.style.display='none'; },3000); } });
-      setTimeout(refresh, 2000);
-    }
-
-    if(document.readyState === 'loading'){
-      document.addEventListener('DOMContentLoaded', function(){
-        renderWS();
-        refresh();
+        $('#cpu').textContent=s.cpu+'%';
+        setBar('#cpuBar',s.cpu);
+        $('#cpuSub').textContent='load '+(s.load?s.load.join(' '):'—');
+        $('#ram').textContent=s.ram_pct+'%';
+        $('#ramSub').textContent=s.ram_used+' / '+s.ram_total;
+        setBar('#ramBar',s.ram_pct);
+        $('#disk').textContent=s.disk_pct+'%';
+        $('#diskSub').textContent=s.disk_used+' / '+s.disk_total+(s.nvme_temp?('  ·  '+s.nvme_temp+'°C'):'');
+        setBar('#diskBar',s.disk_pct);
+        $('#gpu').textContent=s.gpu_pct+'%';
+        $('#gpuSub').textContent=s.gpu_temp?('temp '+s.gpu_temp+'°C'):'—';
+        setBar('#gpuBar',s.gpu_pct);
+        var ct=$('#cpuTemp'); ct.textContent=s.cpu_temp?(s.cpu_temp+'°C'):'—';
+        $('#tempCard').className='gauge '+(s.cpu_temp>85?'c-danger':(s.cpu_temp>70?'c-warn':'c-ok'));
+        var ni=(s.network&&s.network[0])||'—';
+        var parts=String(ni).split(/\s+/);
+        $('#netIface').textContent=parts[0]||'—';
+        $('#netAddr').textContent=parts.slice(1).join(' ')||'';
+        $('#users').textContent=s.users;
+        $('#usersSub').textContent='logged in';
+        $('#uptime').textContent=s.uptime||'—';
+        $('#loadSub').textContent='load '+(s.load?s.load.join(' '):'—');
+        var pt=$('#procTable'); pt.innerHTML='';
+        (s.processes||[]).forEach(function(p){
+          var tr=document.createElement('tr');
+          tr.innerHTML='<td>'+p.pid+'</td><td>'+p.cpu+'</td><td>'+p.mem+'</td><td>'+p.name+'</td>';
+          pt.appendChild(tr);
+        });
+        $('#netInfo').textContent=(s.network||[]).join('\n')||'—';
+        $('#sysInfo').textContent='battery: '+(s.battery||'AC')+'\nusers: '+s.users+'\nuptime: '+(s.uptime||'—');
+      }).catch(function(e){
+        var d=$('#error'); d.style.display='block'; d.textContent='refresh err: '+e.message;
+        setTimeout(function(){ d.style.display='none'; },3000);
       });
-    } else {
-      renderWS();
-      refresh();
+      setTimeout(refresh,2000);
     }
 
     function renderWS(){
-      fetch('/config').then(function(r){ if(!r.ok) throw new Error(r.statusText); return r.json(); }).then(function(cfg){
-        var c = $('#wsButtons'); if(!c) return; c.innerHTML = '';
-        var items = cfg.workspaces || [];
-        for(let i=0;i<items.length;i++){
-          var f = document.createElement('form');
-          f.method='post'; f.action='/workspace/switch'; f.style.display='inline';
-          var inp = document.createElement('input'); inp.type='hidden'; inp.name='index'; inp.value=items[i].index;
-          var b = document.createElement('button'); b.className='btn'; b.type='submit'; b.textContent='WS '+items[i].index;
-          f.appendChild(inp); f.appendChild(b); c.appendChild(f);
-        }
-      }).catch(function(e){});
+      fetch('/config').then(function(r){ return r.json(); }).then(function(cfg){
+        var c=$('#wsButtons'); c.innerHTML='';
+        (cfg.workspaces||[]).forEach(function(w){
+          var a=document.createElement('a');
+          a.className='btn';
+          a.href='/workspace/switch?index='+w.index;
+          a.textContent=w.name;
+          c.appendChild(a);
+        });
+      }).catch(function(){ $('#wsButtons').innerHTML='<span class="empty">unavailable</span>'; });
     }
+
+    function loadLog(path){
+      return function(){ 
+        fetch('/logs?path='+encodeURIComponent(path)+'&n=120')
+          .then(function(r){ return r.json(); })
+          .then(function(d){ $('#logView').textContent=(d.text||'empty').slice(-3000); })
+          .catch(function(){ $('#logView').textContent='log unavailable'; });
+      };
+    }
+    var logLinks=document.querySelectorAll('#dashboard a.btn[href^="/logs"]');
+    for(var i=0;i<logLinks.length;i++){
+      (function(el){ 
+        var href=el.getAttribute('href');
+        el.addEventListener('click', function(e){ e.preventDefault(); loadLog(href)(); });
+      })(logLinks[i]);
+    }
+
+    if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', function(){ renderWS(); refresh(); });
+    else { renderWS(); refresh(); }
   } catch(e){
-    var d = document.createElement('div');
-    d.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#ff5252;color:#fff;padding:10px;font-size:12px;z-index:9999;';
-    d.textContent = 'Fatal JS: ' + e.message;
-    document.body.appendChild(d);
+    var d=document.createElement('div');
+    d.style.cssText='position:fixed;top:0;left:0;right:0;background:#ff5252;color:#fff;padding:10px;font-size:12px;z-index:9999;';
+    d.textContent='Fatal JS: '+e.message; document.body.appendChild(d);
   }
 })();
 </script>
