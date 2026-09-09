@@ -108,7 +108,6 @@
   <div class="tabs">
     <a class="tab active" href="#dashboard">Dashboard</a>
     <a class="tab" href="#deck">Stream Deck</a>
-    <a class="tab" href="#monitor">Monitor</a>
   </div>
   <a class="tab" href="/system/lock">🔒 Lock</a>
 </div>
@@ -153,14 +152,11 @@
 
     <div class="row2">
       <div class="section">
-        <div class="group-title">Logs</div>
-        <div class="row">
-          <a class="btn" href="/logs?path=journal&n=120">Journal</a>
-          <a class="btn" href="/logs?path=/var/log/dpkg.log&n=120">Dpkg</a>
-          <a class="btn" href="/logs?path=/var/log/boot.log&n=120">Boot</a>
-          <a class="btn" href="/logs?path=/var/log/Xorg.0.log&n=120">Xorg</a>
-        </div>
-        <pre id="logView" class="terminal-output empty">Tap a log above</pre>
+        <div class="group-title">Top Processes</div>
+        <table>
+          <thead><tr><th>PID</th><th>CPU%</th><th>MEM%</th><th>Name</th></tr></thead>
+          <tbody id="procTable"><tr><td colspan="4" class="empty">loading…</td></tr></tbody>
+        </table>
       </div>
       <div class="section">
         <div class="group-title">Workspaces</div>
@@ -237,27 +233,6 @@
   </div>
 </div>
 
-<!-- ============ MONITOR ============ -->
-<div class="view" id="monitor">
-  <div class="wrap">
-    <div class="row2">
-      <div class="section">
-        <div class="group-title">Top Processes</div>
-        <table>
-          <thead><tr><th>PID</th><th>CPU%</th><th>MEM%</th><th>Name</th></tr></thead>
-          <tbody id="procTable"><tr><td colspan="4" class="empty">loading…</td></tr></tbody>
-        </table>
-      </div>
-      <div class="section">
-        <div class="group-title">Network</div>
-        <div id="netInfo" class="terminal-output" style="height:auto">loading…</div>
-        <div class="group-title">System</div>
-        <div id="sysInfo" class="terminal-output" style="height:auto">loading…</div>
-    </div>
-    </div>
-  </div>
-</div>
-
 <div id="toast"></div>
 <script>
 (function(){
@@ -325,8 +300,6 @@
           tr.innerHTML='<td>'+p.pid+'</td><td>'+p.cpu+'</td><td>'+p.mem+'</td><td>'+p.name+'</td>';
           pt.appendChild(tr);
         });
-        $('#netInfo').textContent=(s.network||[]).join('\n')||'—';
-        $('#sysInfo').textContent='battery: '+(s.battery||'AC')+'\nusers: '+s.users+'\nuptime: '+(s.uptime||'—');
       }).catch(function(e){
         var d=$('#error'); d.style.display='block'; d.textContent='refresh err: '+e.message;
         setTimeout(function(){ d.style.display='none'; },3000);
@@ -345,22 +318,6 @@
           c.appendChild(a);
         });
       }).catch(function(){ $('#wsButtons').innerHTML='<span class="empty">unavailable</span>'; });
-    }
-
-    function loadLog(path){
-      return function(){ 
-        fetch('/logs?path='+encodeURIComponent(path)+'&n=120')
-          .then(function(r){ return r.json(); })
-          .then(function(d){ $('#logView').textContent=(d.text||'empty').slice(-3000); })
-          .catch(function(){ $('#logView').textContent='log unavailable'; });
-      };
-    }
-    var logLinks=document.querySelectorAll('#dashboard a.btn[href^="/logs"]');
-    for(var i=0;i<logLinks.length;i++){
-      (function(el){ 
-        var href=el.getAttribute('href');
-        el.addEventListener('click', function(e){ e.preventDefault(); loadLog(href)(); });
-      })(logLinks[i]);
     }
 
     if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', function(){ renderWS(); refresh(); });
