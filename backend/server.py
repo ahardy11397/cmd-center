@@ -390,23 +390,39 @@ def _gpu():
         return {"pct": 0, "temp": None}
 
 
-def _cpu_temp():
-    # Prefer Tdie (true die temp) over Tctl (includes AMD offset); same file otherwise
-    for name in ("temp2_input", "temp1_input"):
+def _find_hwmon(name: str) -> str | None:
+    """Find a hwmon directory by chip name (indices shift across reboots)."""
+    for d in sorted(Path("/sys/class/hwmon").glob("hwmon*")):
         try:
-            v = int(Path(f"/sys/class/hwmon/hwmon1/{name}").read_text()) / 1000
-            return round(v)
+            if (d / "name").read_text().strip() == name:
+                return str(d)
         except Exception:
             continue
     return None
 
 
-def _nvme_temp():
+def _read_temp(chip: str, temps: tuple = ("temp2_input", "temp1_input")):
     try:
-        v = int(Path("/sys/class/hwmon/hwmon0/temp1_input").read_text()) / 1000  # nvme Composite
-        return round(v)
+        base = _find_hwmon(chip)
+        if not base:
+            return None
+        for t in temps:
+            try:
+                return round(int(Path(base, t).read_text()) / 1000)
+            except Exception:
+                continue
     except Exception:
-        return None
+        pass
+    return None
+
+
+def _cpu_temp():
+    # Prefer Tdie (true die temp) over Tctl (includes AMD offset)
+    return _read_temp("k10temp")
+
+
+def _nvme_temp():
+    return _read_temp("nvme", temps=("temp1_input",))  # Composite
 
 
 def _battery():
