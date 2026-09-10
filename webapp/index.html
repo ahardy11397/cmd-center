@@ -236,6 +236,14 @@
 
         <div class="group-title" style="margin-top:10px">Configuration</div>
         <div class="ctrl-group">
+          <label for="modeSelect">Streaming Mode / Latency:</label>
+          <select id="modeSelect" class="select-input">
+            <option value="webrtc" selected>🚀 WebRTC (~40ms, Hardware H.264 - Recommended)</option>
+            <option value="mjpeg">⚡ Direct MJPEG (Fallback Low-Latency)</option>
+            <option value="webm">Compressed WebM (High Latency Fallback)</option>
+          </select>
+        </div>
+        <div class="ctrl-group">
           <label for="camSelect">Camera Sensor:</label>
           <select id="camSelect" class="select-input">
             <option value="user" selected>Front Camera (User-Facing)</option>
@@ -381,6 +389,8 @@
       stream: null,
       recorder: null,
       ws: null,
+      pc: null,
+      stopCapture: null,
       isStreaming: false,
       deviceNode: '/dev/video10',
 
@@ -393,6 +403,8 @@
           if (savedFacing && $('#camSelect')) $('#camSelect').value = savedFacing;
           var savedRes = localStorage.getItem('cmd_cam_res');
           if (savedRes && $('#resSelect')) $('#resSelect').value = savedRes;
+          var savedMode = localStorage.getItem('cmd_cam_mode_v2') ? localStorage.getItem('cmd_cam_mode') : 'webrtc';
+          if ($('#modeSelect')) $('#modeSelect').value = savedMode || 'webrtc';
           var savedMirror = localStorage.getItem('cmd_cam_mirror');
           if (savedMirror !== null && $('#camMirror')) $('#camMirror').checked = (savedMirror === '1');
           var savedAuto = localStorage.getItem('cmd_cam_autostart');
@@ -412,6 +424,15 @@
           $('#camMirror').addEventListener('change', function(){
             self.applyMirror();
             try { localStorage.setItem('cmd_cam_mirror', this.checked ? '1' : '0'); } catch(e){}
+          });
+        }
+        if ($('#modeSelect')) {
+          $('#modeSelect').addEventListener('change', function(){
+            try {
+              localStorage.setItem('cmd_cam_mode', this.value);
+              localStorage.setItem('cmd_cam_mode_v2', '1');
+            } catch(e){}
+            if (self.isStreaming) self.restart();
           });
         }
         if ($('#camSelect')) {
@@ -534,6 +555,7 @@
 
         var facing = $('#camSelect') ? $('#camSelect').value : 'user';
         var resVal = $('#resSelect') ? $('#resSelect').value : '720';
+        var mode = $('#modeSelect') ? $('#modeSelect').value : 'mjpeg';
         var width = 1280, height = 720;
         if (resVal === '1080') { width = 1920; height = 1080; }
         else if (resVal === '480') { width = 640; height = 480; }
@@ -548,7 +570,16 @@
           }
         };
 
-        navigator.mediaDevices.getUserMedia(constraints).then(function(mediaStream){
+        function getStream() {
+          return navigator.mediaDevices.getUserMedia(constraints).catch(function(e){
+            if (e.name !== 'NotAllowedError') {
+              return navigator.mediaDevices.getUserMedia({ audio: false, video: true });
+            }
+            throw e;
+          });
+        }
+
+        getStream().then(function(mediaStream){
           self.stream = mediaStream;
           var video = $('#camVideo');
           if (video) {
@@ -563,51 +594,194 @@
           var actualH = settings.height || height;
           var actualFps = settings.frameRate ? Math.round(settings.frameRate) : 30;
           if ($('#camResDisplay')) {
-            $('#camResDisplay').textContent = actualW + 'x' + actualH + ' @ ' + actualFps + 'fps';
+            $('#camResDisplay').textContent = actualW + 'x' + actualH + ' @ ' + actualFps + 'fps (' + mode.toUpperCase() + ')';
           }
 
-          // Determine supported MIME type for MediaRecorder
-          var mimeType = '';
-          var candidates = ['video/webm;codecs=vp8', 'video/webm;codecs=h264', 'video/webm', 'video/mp4'];
-          for (var i = 0; i < candidates.length; i++) {
-            if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(candidates[i])) {
-              mimeType = candidates[i];
-              break;
-            }
+          if (mode === 'webrtc') {
+            // --- HARDWARE-ACCELERATED WEBRTC STREAM (~40ms LATENCY) ---
+            var pc = new RTCPeerConnection({
+              iceServers: [],
+              bundlePolicy: 'max-bundle'
+            });
+            self.pc = pc;
+
+            mediaStream.getTracks().forEach(function(t){
+              pc.addTrack(t, mediaStream);
+            });
+
+            pc.onconnectionstatechange = function(){
+              if (pc.connectionState === 'connected') {
+                self.isStreaming = true;
+                self.updateUI('streaming');
+                toast('🚀 WebRTC real-time stream active');
+              } else if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected' || pc.connectionState === 'closed') {
+                if (self.isStreaming) {
+                  self.stop();
+                  self.showAlert('WebRTC stream disconnected', false);
+                }
+              }
+            };
+
+            self.updateUI('starting', 'Initiating WebRTC stream…');
+
+            pc.createOffer().then(function(offer){
+              return pc.setLocalDescription(offer);
+            }).then(function(){
+              return new Promise(function(resolve){
+                if (pc.iceGatheringState === 'complete') {
+                  resolve();
+                } else {
+                  var onGather = function(){
+                    if (pc.iceGatheringState === 'complete') {
+                      pc.removeEventListener('icegatheringstatechange', onGather);
+                      resolve();
+                    }
+                  };
+                  pc.addEventListener('icegatheringstatechange', onGather);
+                  setTimeout(resolve, 800);
+                }
+              });
+            }).then(function(){
+              self.updateUI('starting', 'Connecting to host virtual camera…');
+              return fetch('/webrtc/offer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  sdp: pc.localDescription.sdp,
+                  type: pc.localDescription.type,
+                  w: actualW,
+                  h: actualH,
+                  fps: actualFps
+                })
+              });
+            }).then(function(res){
+              if (!res.ok) {
+                return res.json().catch(function(){ return { message: 'HTTP ' + res.status }; }).then(function(d){
+                  throw new Error(d.message || 'WebRTC offer rejected');
+                });
+              }
+              return res.json();
+            }).then(function(answer){
+              return pc.setRemoteDescription(new RTCSessionDescription(answer));
+            }).then(function(){
+              setTimeout(function(){
+                if (!self.isStreaming && (pc.connectionState === 'connected' || pc.iceConnectionState === 'connected')) {
+                  self.isStreaming = true;
+                  self.updateUI('streaming');
+                  toast('🚀 WebRTC real-time stream active');
+                }
+              }, 1200);
+            }).catch(function(err){
+              self.stop();
+              self.showAlert('WebRTC error: ' + err.message, false);
+              self.updateUI('error', 'WebRTC error: ' + err.message);
+            });
+
+            return;
           }
 
-          // Connect WebSocket
+          // Fallback WebSocket connection (mjpeg or webm mode)
           var wsProto = (location.protocol === 'https:' ? 'wss:' : 'ws:');
-          var wsUrl = wsProto + '//' + location.host + '/ws/cam';
+          var wsUrl = wsProto + '//' + location.host + '/ws/cam?mode=' + encodeURIComponent(mode) + '&w=' + actualW + '&h=' + actualH + '&fps=' + actualFps;
           self.updateUI('starting', 'Connecting to ' + wsUrl + '…');
 
           var ws = new WebSocket(wsUrl);
           self.ws = ws;
-
           ws.binaryType = 'arraybuffer';
 
           ws.onopen = function(){
-            // Initialize MediaRecorder
-            try {
-              var recOptions = mimeType ? { mimeType: mimeType, videoBitsPerSecond: 2500000 } : {};
-              var recorder = new MediaRecorder(mediaStream, recOptions);
-              self.recorder = recorder;
+            if (mode === 'mjpeg') {
+              // --- ULTRA-LOW LATENCY DIRECT JPEG LOOP ---
+              var canvas = document.createElement('canvas');
+              var ctx = canvas.getContext('2d', { alpha: false });
+              canvas.width = actualW;
+              canvas.height = actualH;
 
-              recorder.ondataavailable = function(e){
-                if (e.data && e.data.size > 0 && self.ws && self.ws.readyState === WebSocket.OPEN) {
-                  self.ws.send(e.data);
+              var isCapturing = true;
+              var isEncoding = false;
+              var targetFps = 30;
+              var frameInterval = 1000 / targetFps;
+              var lastFrameTime = 0;
+
+              self.stopCapture = function(){ isCapturing = false; };
+
+              function onVideoFrame(now){
+                if (!self.isStreaming || !isCapturing) return;
+
+                if ('requestVideoFrameCallback' in video) {
+                  video.requestVideoFrameCallback(onVideoFrame);
+                } else {
+                  requestAnimationFrame(onVideoFrame);
                 }
-              };
 
-              // Send 50ms slices for low latency
-              recorder.start(50);
+                if (now - lastFrameTime < frameInterval) return;
+                lastFrameTime = now;
+
+                // Frame-dropping backpressure: Prevents ANY latency buildup
+                if (isEncoding || (self.ws && self.ws.bufferedAmount > 65536) || !video.videoWidth) {
+                  return;
+                }
+
+                isEncoding = true;
+                if (canvas.width !== actualW || canvas.height !== actualH) {
+                  canvas.width = actualW;
+                  canvas.height = actualH;
+                }
+
+                ctx.drawImage(video, 0, 0, actualW, actualH);
+                canvas.toBlob(function(blob){
+                  isEncoding = false;
+                  if (self.isStreaming && self.ws && self.ws.readyState === WebSocket.OPEN && blob) {
+                    self.ws.send(blob);
+                  }
+                }, 'image/jpeg', 0.65);
+              }
+
               self.isStreaming = true;
               self.updateUI('streaming');
-              toast('Webcam stream started');
-            } catch(recErr) {
-              self.stop();
-              self.showAlert('MediaRecorder failed: ' + recErr.message, false);
-              self.updateUI('error', 'Recorder error: ' + recErr.message);
+              toast('⚡ Direct MJPEG stream active');
+
+              if ('requestVideoFrameCallback' in video) {
+                video.requestVideoFrameCallback(onVideoFrame);
+              } else {
+                requestAnimationFrame(onVideoFrame);
+              }
+
+            } else {
+              // --- COMPRESSED WEBM MODE ---
+              var mimeType = '';
+              var candidates = ['video/webm;codecs=vp8', 'video/webm;codecs=h264', 'video/webm', 'video/mp4'];
+              for (var i = 0; i < candidates.length; i++) {
+                if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(candidates[i])) {
+                  mimeType = candidates[i];
+                  break;
+                }
+              }
+
+              try {
+                var recOptions = mimeType ? {
+                  mimeType: mimeType,
+                  videoBitsPerSecond: 1500000,
+                  videoKeyFrameIntervalDuration: 250
+                } : {};
+                var recorder = new MediaRecorder(mediaStream, recOptions);
+                self.recorder = recorder;
+
+                recorder.ondataavailable = function(e){
+                  if (e.data && e.data.size > 0 && self.ws && self.ws.readyState === WebSocket.OPEN) {
+                    self.ws.send(e.data);
+                  }
+                };
+
+                recorder.start(30);
+                self.isStreaming = true;
+                self.updateUI('streaming');
+                toast('WebM stream active');
+              } catch(recErr) {
+                self.stop();
+                self.showAlert('MediaRecorder failed: ' + recErr.message, false);
+                self.updateUI('error', 'Recorder error: ' + recErr.message);
+              }
             }
           };
 
@@ -655,6 +829,17 @@
       stop: function(){
         var self = this;
         self.isStreaming = false;
+
+        if (self.pc) {
+          try { self.pc.close(); } catch(e){}
+          self.pc = null;
+          fetch('/webrtc/stop', { method: 'POST' }).catch(function(){});
+        }
+
+        if (self.stopCapture) {
+          try { self.stopCapture(); } catch(e){}
+          self.stopCapture = null;
+        }
 
         if (self.recorder) {
           try { if (self.recorder.state !== 'inactive') self.recorder.stop(); } catch(e){}

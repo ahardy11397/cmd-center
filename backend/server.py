@@ -13,9 +13,21 @@ import subprocess
 from datetime import datetime
 from pathlib import Path
 
+import aioice.ice
+from aiortc import RTCPeerConnection, RTCSessionDescription
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
+from pydantic import BaseModel
+
+# Ensure 127.0.0.1 is included in ICE host addresses so localhost testing works alongside LAN
+_orig_get_host_addresses = aioice.ice.get_host_addresses
+def _custom_get_host_addresses(use_ipv4: bool = True, use_ipv6: bool = True) -> list[str]:
+    addresses = _orig_get_host_addresses(use_ipv4=use_ipv4, use_ipv6=use_ipv6)
+    if use_ipv4 and "127.0.0.1" not in addresses:
+        addresses.append("127.0.0.1")
+    return addresses
+aioice.ice.get_host_addresses = _custom_get_host_addresses
 
 APP_DIR = Path(__file__).resolve().parent.parent
 WEBAPP = APP_DIR / "webapp" / "index.html"
@@ -459,23 +471,43 @@ def _processes():
 class WebcamManager:
     def __init__(self):
         self.proc: asyncio.subprocess.Process | None = None
+        self.stream_task: asyncio.Task | None = None
+        self.pc: RTCPeerConnection | None = None
         self.active_client: WebSocket | None = None
         self.lock = asyncio.Lock()
 
     async def stop(self):
+        if self.stream_task and not self.stream_task.done():
+            self.stream_task.cancel()
+            try:
+                await self.stream_task
+            except (asyncio.CancelledError, Exception):
+                pass
+        self.stream_task = None
+
+        if self.pc:
+            try:
+                await self.pc.close()
+            except Exception:
+                pass
+            self.pc = None
+
         if self.proc and self.proc.returncode is None:
             try:
-                if self.proc.stdin:
+                if self.proc.stdin and not self.proc.stdin.is_closing():
                     self.proc.stdin.close()
-                    await self.proc.stdin.wait_closed()
             except Exception:
                 pass
             try:
                 self.proc.terminate()
-                await asyncio.wait_for(self.proc.wait(), timeout=1.5)
+                await asyncio.wait_for(self.proc.wait(), timeout=1.0)
             except Exception:
                 if self.proc:
-                    self.proc.kill()
+                    try:
+                        self.proc.kill()
+                        await self.proc.wait()
+                    except Exception:
+                        pass
         self.proc = None
         self.active_client = None
 
@@ -483,18 +515,172 @@ class WebcamManager:
 cam_manager = WebcamManager()
 
 
+async def _stream_track_to_v4l2(track, req_w: int, req_h: int, req_fps: int):
+    proc = None
+    try:
+        first_frame = await track.recv()
+        actual_w = first_frame.width or req_w
+        actual_h = first_frame.height or req_h
+        fps_val = max(15, min(60, int(req_fps)))
+
+        ffmpeg_cmd = [
+            "ffmpeg",
+            "-y",
+            "-loglevel", "warning",
+            "-fflags", "+nobuffer+flush_packets",
+            "-flags", "+low_delay",
+            "-avioflags", "direct",
+            "-f", "rawvideo",
+            "-pix_fmt", "yuv420p",
+            "-s", f"{actual_w}x{actual_h}",
+            "-r", str(fps_val),
+            "-i", "pipe:0",
+            "-f", "v4l2",
+            CAM_DEVICE,
+        ]
+
+        proc = await asyncio.create_subprocess_exec(
+            *ffmpeg_cmd,
+            stdin=asyncio.subprocess.PIPE,
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        cam_manager.proc = proc
+
+        def frame_to_raw_bytes(f):
+            if f.width != actual_w or f.height != actual_h:
+                f = f.reformat(width=actual_w, height=actual_h, format="yuv420p")
+            elif f.format.name != "yuv420p":
+                f = f.reformat(format="yuv420p")
+
+            if (
+                f.planes[0].line_size == actual_w
+                and f.planes[1].line_size == actual_w // 2
+                and f.planes[2].line_size == actual_w // 2
+            ):
+                return bytes(f.planes[0]) + bytes(f.planes[1]) + bytes(f.planes[2])
+            return f.to_ndarray(format="yuv420p").tobytes()
+
+        # Write first frame
+        first_bytes = frame_to_raw_bytes(first_frame)
+        if proc.stdin and not proc.stdin.is_closing():
+            proc.stdin.write(first_bytes)
+            await proc.stdin.drain()
+
+        # Stream subsequent frames directly into FFmpeg
+        while True:
+            frame = await track.recv()
+            raw_bytes = frame_to_raw_bytes(frame)
+            if proc.stdin and not proc.stdin.is_closing():
+                proc.stdin.write(raw_bytes)
+                await proc.stdin.drain()
+            else:
+                break
+    except (asyncio.CancelledError, BrokenPipeError, ConnectionResetError):
+        pass
+    except Exception as e:
+        print(f"WebRTC stream track error: {e}")
+    finally:
+        if proc and proc.returncode is None:
+            try:
+                if proc.stdin and not proc.stdin.is_closing():
+                    proc.stdin.close()
+            except Exception:
+                pass
+            try:
+                proc.terminate()
+                await asyncio.wait_for(proc.wait(), timeout=1.0)
+            except Exception:
+                if proc:
+                    try:
+                        proc.kill()
+                        await proc.wait()
+                    except Exception:
+                        pass
+
+
+class WebRTCOffer(BaseModel):
+    sdp: str
+    type: str
+    w: int = 1280
+    h: int = 720
+    fps: int = 30
+
+
+@app.post("/webrtc/offer")
+async def webrtc_offer(offer_in: WebRTCOffer):
+    dev = Path(CAM_DEVICE)
+    if not dev.exists():
+        return JSONResponse(
+            {
+                "status": "error",
+                "message": f"Virtual camera device {CAM_DEVICE} not found. Please run: sudo ./scripts/setup_v4l2loopback.sh"
+            },
+            status_code=400,
+        )
+
+    async with cam_manager.lock:
+        await cam_manager.stop()
+
+        try:
+            out = subprocess.check_output(["fuser", CAM_DEVICE], stderr=subprocess.DEVNULL).decode()
+            for pid_str in out.split():
+                if pid_str.isdigit() and int(pid_str) != os.getpid():
+                    os.kill(int(pid_str), 9)
+        except Exception:
+            pass
+
+        pc = RTCPeerConnection()
+        cam_manager.pc = pc
+
+        @pc.on("connectionstatechange")
+        async def on_connectionstatechange():
+            if pc.connectionState in ["failed", "closed", "disconnected"]:
+                async with cam_manager.lock:
+                    if cam_manager.pc == pc:
+                        await cam_manager.stop()
+
+        @pc.on("track")
+        def on_track(track):
+            if track.kind == "video":
+                cam_manager.stream_task = asyncio.create_task(
+                    _stream_track_to_v4l2(track, offer_in.w, offer_in.h, offer_in.fps)
+                )
+
+        offer = RTCSessionDescription(sdp=offer_in.sdp, type=offer_in.type)
+        await pc.setRemoteDescription(offer)
+        answer = await pc.createAnswer()
+        await pc.setLocalDescription(answer)
+
+        return JSONResponse({
+            "sdp": pc.localDescription.sdp,
+            "type": pc.localDescription.type
+        })
+
+
+@app.post("/webrtc/stop")
+async def webrtc_stop():
+    async with cam_manager.lock:
+        await cam_manager.stop()
+    return JSONResponse({"status": "ok"})
+
+
 @app.get("/cam/status")
 async def cam_status():
     dev = Path(CAM_DEVICE)
+    is_streaming = (
+        (cam_manager.proc is not None and cam_manager.proc.returncode is None)
+        or (cam_manager.pc is not None and cam_manager.pc.connectionState in ["connected", "connecting"])
+    )
     return JSONResponse({
         "device": CAM_DEVICE,
         "device_exists": dev.exists(),
-        "streaming": cam_manager.proc is not None and cam_manager.proc.returncode is None,
+        "streaming": is_streaming,
     })
 
 
 @app.websocket("/ws/cam")
-async def websocket_cam(websocket: WebSocket):
+async def websocket_cam(websocket: WebSocket, mode: str = "mjpeg", w: int = 1280, h: int = 720, fps: int = 30):
     await websocket.accept()
 
     dev = Path(CAM_DEVICE)
@@ -509,17 +695,49 @@ async def websocket_cam(websocket: WebSocket):
     async with cam_manager.lock:
         await cam_manager.stop()
         try:
-            # ffmpeg reads matroska/webm stream from stdin and writes raw yuv420p to v4l2 device
+            # Low-latency ffmpeg pipeline
+            if mode == "webm":
+                ffmpeg_cmd = [
+                    "ffmpeg",
+                    "-y",
+                    "-loglevel", "warning",
+                    "-fflags", "+nobuffer+flush_packets",
+                    "-flags", "+low_delay",
+                    "-avioflags", "direct",
+                    "-probesize", "32768",
+                    "-analyzeduration", "0",
+                    "-use_wallclock_as_timestamps", "1",
+                    "-f", "matroska",
+                    "-i", "pipe:0",
+                    "-vf", "format=yuv420p",
+                    "-f", "v4l2",
+                    CAM_DEVICE,
+                ]
+            else:
+                # Default: Direct JPEG frames via image2pipe for real-time ~50ms latency
+                # -s and -framerate allow image2pipe to initialize V4L2 immediately without error
+                width_val = max(320, min(1920, int(w)))
+                height_val = max(240, min(1080, int(h)))
+                fps_val = max(15, min(60, int(fps)))
+                ffmpeg_cmd = [
+                    "ffmpeg",
+                    "-y",
+                    "-loglevel", "warning",
+                    "-fflags", "+nobuffer+flush_packets",
+                    "-flags", "+low_delay",
+                    "-avioflags", "direct",
+                    "-f", "image2pipe",
+                    "-vcodec", "mjpeg",
+                    "-s", f"{width_val}x{height_val}",
+                    "-framerate", str(fps_val),
+                    "-i", "pipe:0",
+                    "-vf", "format=yuv420p",
+                    "-f", "v4l2",
+                    CAM_DEVICE,
+                ]
+
             proc = await asyncio.create_subprocess_exec(
-                "ffmpeg",
-                "-y",
-                "-loglevel", "warning",
-                "-use_wallclock_as_timestamps", "1",
-                "-f", "matroska",
-                "-i", "pipe:0",
-                "-vf", "format=yuv420p",
-                "-f", "v4l2",
-                CAM_DEVICE,
+                *ffmpeg_cmd,
                 stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.DEVNULL,
                 stderr=asyncio.subprocess.PIPE,
@@ -537,6 +755,7 @@ async def websocket_cam(websocket: WebSocket):
     await websocket.send_json({
         "type": "status",
         "status": "streaming",
+        "mode": mode,
         "device": CAM_DEVICE
     })
 
