@@ -165,7 +165,100 @@ async def screenshot_get():
     return _redirect_page("screenshot")
 
 
+@app.get("/open")
+async def open_url(url: str = ""):
+    """Open a URL in Chrome on the host display."""
+    if not re.match(r"^https?://[A-Za-z0-9._:/?=&%+-]+$", url):
+        return _redirect_page("bad url")
+    _spawn(f"google-chrome {shlex.quote(url)}")
+    return _redirect_page("opening " + url)
+
+
 # ---------------------------------------------------------- state (JSON)
+@app.get("/services/ports")
+async def services_ports():
+    """Every listening TCP service: name, port, bind address, dashboard URL."""
+    try:
+        out = subprocess.check_output(["ss", "-tlnp"], text=True, stderr=subprocess.DEVNULL)
+    except Exception:
+        return JSONResponse({"services": []})
+
+    seen = {}
+    for line in out.splitlines()[1:]:
+        # LISTEN 0 128 127.0.0.1:8080 0.0.0.0:* users:(("proc",pid=123,fd=4),...)
+        m = re.match(r"LISTEN\s+\d+\s+\d+\s+(\S+?):(\d+)\s+\S+\s+users:\(\((.*)\)\)", line)
+        if not m:
+            continue
+        addr, port, procs_raw = m.group(1), int(m.group(2)), m.group(3)
+        names = re.findall(r'"([^"]+)",pid=(\d+)', procs_raw)
+        if not names:
+            continue
+        proc_name, pid = names[0]
+        key = (proc_name, port)
+        if key in seen:
+            continue
+        seen[key] = {
+            "proc": proc_name,
+            "pid": int(pid),
+            "service": _svc_name(proc_name, pid),
+            "port": port,
+            "addr": addr,
+            "url": _svc_url(proc_name, port, addr),
+        }
+
+    services = sorted(seen.values(), key=lambda s: s["port"])
+    return JSONResponse({"services": services})
+
+
+def _svc_name(proc: str, pid: int) -> str:
+    """Human-readable service name: known map > systemd unit > process name."""
+    known = {
+        "python3": None,  # resolved via systemd below (could be any of several)
+        "node-MainThread": "Node app",
+        "next-server (v1": "Next.js app",
+        "llama-server": "llama.cpp LLM server",
+        "openviking-serv": "OpenViking",
+        "Discord": "Discord",
+        "ulauncher": "ULAuncher",
+        "kdeconnectd": "KDE Connect",
+        "language_server": "Antigravity LSP",
+        "antigravity": "Antigravity",
+        "hermes": "Hermes",
+        "cupsd": "CUPS printing",
+    }
+    if known.get(proc):
+        return known[proc].rstrip("(").strip() if proc.startswith("next") else known[proc]
+    try:
+        unit = subprocess.check_output(
+            ["systemctl", "--user", "status", str(pid)], text=True,
+            stderr=subprocess.DEVNULL)
+        for line in unit.splitlines():
+            if line.strip().startswith("Loaded:"):
+                # Loaded: loaded (/home/ahard/.config/systemd/user/xxx.service; ...)
+                m = re.search(r"([A-Za-z0-9_.@-]+\.service)", line)
+                if m:
+                    return m.group(1).replace(".service", "")
+    except Exception:
+        pass
+    return proc
+
+
+def _svc_url(proc: str, port: int, addr: str) -> str | None:
+    """Dashboard URL for services known to have a web UI."""
+    web = {
+        8080: "http://localhost:8080",      # llama.cpp server UI
+        4173: "http://localhost:4173",      # gods-eye-view
+        3000: "http://localhost:3000",      # next.js
+        9443: "https://localhost:9443",     # portainer
+        8083: "http://localhost:8083",      # noVNC
+        6463: None,                          # discord local rpc, no web ui
+    }
+    if proc in ("llama-server", "node-MainThread", "next-server (v1"):
+        return web.get(port)
+    return web.get(port)
+
+
+# ------------------------------------------------------- state (JSON) /logs, /system/status
 @app.get("/logs")
 async def logs(path: str = "journal", n: int = 120):
     try:
