@@ -3,14 +3,17 @@
 All action endpoints return a small HTML redirect page (kiosk-safe, no JSON
 in the browser). State endpoints return JSON for the dashboard's JS polling.
 """
+import argparse
 import asyncio
+import json
+import os
 import re
 import shlex
 import subprocess
 from datetime import datetime
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 
@@ -18,6 +21,11 @@ APP_DIR = Path(__file__).resolve().parent.parent
 WEBAPP = APP_DIR / "webapp" / "index.html"
 CAPTURE_DIR = APP_DIR / "captures"
 CAPTURE_DIR.mkdir(exist_ok=True)
+CERTS_DIR = APP_DIR / "certs"
+CERT_FILE = CERTS_DIR / "cert.pem"
+KEY_FILE = CERTS_DIR / "key.pem"
+
+CAM_DEVICE = os.environ.get("CAM_DEVICE", "/dev/video10")
 
 TERMINAL = "x-terminal-emulator"  # qterminal on this machine
 
@@ -446,6 +454,148 @@ def _processes():
         return []
 
 
+
+# ------------------------------------------------------------- webcam streaming
+class WebcamManager:
+    def __init__(self):
+        self.proc: asyncio.subprocess.Process | None = None
+        self.active_client: WebSocket | None = None
+        self.lock = asyncio.Lock()
+
+    async def stop(self):
+        if self.proc and self.proc.returncode is None:
+            try:
+                if self.proc.stdin:
+                    self.proc.stdin.close()
+                    await self.proc.stdin.wait_closed()
+            except Exception:
+                pass
+            try:
+                self.proc.terminate()
+                await asyncio.wait_for(self.proc.wait(), timeout=1.5)
+            except Exception:
+                if self.proc:
+                    self.proc.kill()
+        self.proc = None
+        self.active_client = None
+
+
+cam_manager = WebcamManager()
+
+
+@app.get("/cam/status")
+async def cam_status():
+    dev = Path(CAM_DEVICE)
+    return JSONResponse({
+        "device": CAM_DEVICE,
+        "device_exists": dev.exists(),
+        "streaming": cam_manager.proc is not None and cam_manager.proc.returncode is None,
+    })
+
+
+@app.websocket("/ws/cam")
+async def websocket_cam(websocket: WebSocket):
+    await websocket.accept()
+
+    dev = Path(CAM_DEVICE)
+    if not dev.exists():
+        await websocket.send_json({
+            "type": "error",
+            "message": f"Virtual camera device {CAM_DEVICE} not found. Please run: sudo ./scripts/setup_v4l2loopback.sh"
+        })
+        await websocket.close(code=1008)
+        return
+
+    async with cam_manager.lock:
+        await cam_manager.stop()
+        try:
+            # ffmpeg reads matroska/webm stream from stdin and writes raw yuv420p to v4l2 device
+            proc = await asyncio.create_subprocess_exec(
+                "ffmpeg",
+                "-y",
+                "-loglevel", "warning",
+                "-use_wallclock_as_timestamps", "1",
+                "-f", "matroska",
+                "-i", "pipe:0",
+                "-vf", "format=yuv420p",
+                "-f", "v4l2",
+                CAM_DEVICE,
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            cam_manager.proc = proc
+            cam_manager.active_client = websocket
+        except Exception as e:
+            await websocket.send_json({
+                "type": "error",
+                "message": f"Failed to spawn ffmpeg: {e}"
+            })
+            await websocket.close(code=1011)
+            return
+
+    await websocket.send_json({
+        "type": "status",
+        "status": "streaming",
+        "device": CAM_DEVICE
+    })
+
+    try:
+        while True:
+            message = await websocket.receive()
+            if "bytes" in message and message["bytes"]:
+                if cam_manager.proc and cam_manager.proc.returncode is None:
+                    try:
+                        cam_manager.proc.stdin.write(message["bytes"])
+                        await cam_manager.proc.stdin.drain()
+                    except (BrokenPipeError, ConnectionResetError):
+                        break
+            elif "text" in message and message["text"]:
+                try:
+                    msg = json.loads(message["text"])
+                    if msg.get("type") == "ping":
+                        await websocket.send_json({"type": "pong"})
+                except Exception:
+                    pass
+    except (WebSocketDisconnect, asyncio.CancelledError):
+        pass
+    finally:
+        async with cam_manager.lock:
+            if cam_manager.active_client == websocket:
+                await cam_manager.stop()
+
+
+def ensure_certs():
+    CERTS_DIR.mkdir(exist_ok=True)
+    if not CERT_FILE.exists() or not KEY_FILE.exists():
+        print("Generating self-signed SSL certificate for HTTPS...")
+        subprocess.run(
+            [
+                "openssl", "req", "-x509", "-newkey", "rsa:2048",
+                "-keyout", str(KEY_FILE), "-out", str(CERT_FILE),
+                "-days", "3650", "-nodes", "-subj", "/CN=cmd-center"
+            ],
+            check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+        )
+
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8081, log_level="warning")
+
+    parser = argparse.ArgumentParser(description="CMD Center Server")
+    parser.add_argument("--port", type=int, default=int(os.environ.get("PORT", 8081)), help="Port to listen on (default: 8081)")
+    parser.add_argument("--host", type=str, default=os.environ.get("HOST", "0.0.0.0"), help="Host to bind (default: 0.0.0.0)")
+    parser.add_argument("--no-ssl", action="store_true", help="Disable HTTPS and run in plain HTTP mode")
+    args = parser.parse_args()
+
+    ssl_kwargs = {}
+    use_ssl = not args.no_ssl and os.environ.get("USE_SSL", "1").lower() not in ("0", "false", "no")
+    if use_ssl:
+        ensure_certs()
+        ssl_kwargs = {"ssl_certfile": str(CERT_FILE), "ssl_keyfile": str(KEY_FILE)}
+        print(f"Starting CMD Center (HTTPS) on https://{args.host}:{args.port}")
+    else:
+        print(f"Starting CMD Center (HTTP) on http://{args.host}:{args.port}")
+
+    uvicorn.run(app, host=args.host, port=args.port, log_level="warning", **ssl_kwargs)
+

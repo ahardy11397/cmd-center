@@ -100,6 +100,27 @@
   #toast.show { opacity:1; }
   .error { position:fixed; top:0; left:0; right:0; background:var(--danger); color:#141414; padding:8px; font-size:11px; z-index:9999; display:none; }
   iframe[name=cmdframe] { display:none; width:0; height:0; border:0; }
+
+  /* ---------- WEBCAM ---------- */
+  .badge { display:inline-block; font-size:10px; padding:2px 6px; border-radius:3px; background:#2a2a2e; color:var(--muted); margin-left:6px; vertical-align:middle; font-weight:700; }
+  .badge.live { background:#8fd674; color:#101012; }
+  .badge.warn { background:#e6a23c; color:#101012; }
+  .badge.err { background:var(--danger); color:#fff; }
+
+  .cam-layout { display:grid; grid-template-columns:1.5fr 1fr; gap:16px; align-items:start; }
+  @media (max-width: 840px) { .cam-layout { grid-template-columns:1fr; } }
+  .cam-preview-container { position:relative; background:#000; border:1px solid var(--border); border-radius:6px; overflow:hidden; aspect-ratio:16/9; display:flex; align-items:center; justify-content:center; }
+  #camVideo { width:100%; height:100%; object-fit:cover; display:none; }
+  #camVideo.mirrored { transform:scaleX(-1); }
+  .cam-overlay { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:rgba(10,10,12,0.85); color:var(--muted); font-size:13px; text-transform:uppercase; letter-spacing:.1em; text-align:center; padding:20px; }
+  .cam-controls { background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:16px; display:flex; flex-direction:column; gap:12px; }
+  .cam-stat-row { display:flex; justify-content:space-between; align-items:center; font-size:12px; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.05); }
+  .ctrl-group { display:flex; flex-direction:column; gap:6px; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; }
+  .select-input { background:var(--panel2); border:1px solid var(--border); color:var(--fg); padding:10px 12px; border-radius:4px; font-size:13px; font-family:inherit; outline:none; }
+  .select-input:focus { border-color:var(--accent); }
+  .cam-alert { font-size:12px; padding:10px 12px; border-radius:4px; background:rgba(255,74,61,0.15); border:1px solid var(--danger); color:#ff8b80; line-height:1.4; }
+  .cam-alert a { color:var(--fg); text-decoration:underline; }
+  .cam-alert code { background:rgba(0,0,0,0.4); padding:2px 5px; border-radius:3px; }
 </style>
 </head>
 <body>
@@ -111,6 +132,7 @@
   <div class="tabs">
     <a class="tab active" href="#dashboard">Dashboard</a>
     <a class="tab" href="#services">Services</a>
+    <a class="tab" href="#webcam">Webcam <span id="camBadge" class="badge">OFF</span></a>
   </div>
   <a class="tab" href="/system/lock">🔒 Lock</a>
 </div>
@@ -183,6 +205,66 @@
       <thead><tr><th>Service</th><th>Port</th><th>Address</th><th></th></tr></thead>
       <tbody id="svcTable"><tr><td colspan="4" class="empty">loading…</td></tr></tbody>
     </table>
+  </div>
+</div>
+
+<!-- ============ WEBCAM ============ -->
+<div class="view" id="webcam">
+  <div class="wrap">
+    <div class="cam-layout">
+      <div class="cam-preview-container">
+        <video id="camVideo" autoplay playsinline muted></video>
+        <div id="camOverlay" class="cam-overlay">
+          <div class="cam-overlay-text" id="camStatusText">Webcam Stream Inactive</div>
+          <button class="btn accent" id="camActionBtn" style="margin-top:14px; min-width:160px;">Start Webcam</button>
+        </div>
+      </div>
+      <div class="cam-controls">
+        <div class="group-title">Webcam Stream Controls</div>
+        <div class="cam-stat-row">
+          <span>Stream Status:</span>
+          <strong id="camStateDisplay" class="metric">OFF</strong>
+        </div>
+        <div class="cam-stat-row">
+          <span>Virtual Device:</span>
+          <code id="camDeviceDisplay">/dev/video10</code>
+        </div>
+        <div class="cam-stat-row">
+          <span>Resolution / Mode:</span>
+          <span id="camResDisplay">—</span>
+        </div>
+
+        <div class="group-title" style="margin-top:10px">Configuration</div>
+        <div class="ctrl-group">
+          <label for="camSelect">Camera Sensor:</label>
+          <select id="camSelect" class="select-input">
+            <option value="user" selected>Front Camera (User-Facing)</option>
+            <option value="environment">Rear Camera</option>
+          </select>
+        </div>
+        <div class="ctrl-group">
+          <label for="resSelect">Resolution Quality:</label>
+          <select id="resSelect" class="select-input">
+            <option value="720" selected>720p HD (1280x720 @ 30fps - Recommended)</option>
+            <option value="1080">1080p Full HD (1920x1080 @ 30fps)</option>
+            <option value="480">480p SD (640x480 @ 30fps - Low Bandwidth)</option>
+          </select>
+        </div>
+        <div class="ctrl-group" style="flex-direction:row; align-items:center; justify-content:space-between; margin-top:2px;">
+          <span>Mirror Front Camera:</span>
+          <input type="checkbox" id="camMirror" checked style="width:18px;height:18px;cursor:pointer;">
+        </div>
+        <div class="ctrl-group" style="flex-direction:row; align-items:center; justify-content:space-between;">
+          <span>Auto-Start on Load:</span>
+          <input type="checkbox" id="camAutoStart" style="width:18px;height:18px;cursor:pointer;">
+        </div>
+
+        <div class="row" style="margin-top:10px">
+          <button class="btn accent" id="camToggleBtn" style="flex:1">Start Streaming</button>
+        </div>
+        <div id="camAlert" class="cam-alert" style="display:none;"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -294,8 +376,323 @@
       });
     }
 
-    if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', function(){ renderWS(); refresh(); renderServices(); });
-    else { renderWS(); refresh(); renderServices(); }
+    // ---------- WEBCAM STREAM CONTROLLER ----------
+    var webcamController = {
+      stream: null,
+      recorder: null,
+      ws: null,
+      isStreaming: false,
+      deviceNode: '/dev/video10',
+
+      init: function(){
+        var self = this;
+
+        // Restore settings from localStorage
+        try {
+          var savedFacing = localStorage.getItem('cmd_cam_facing');
+          if (savedFacing && $('#camSelect')) $('#camSelect').value = savedFacing;
+          var savedRes = localStorage.getItem('cmd_cam_res');
+          if (savedRes && $('#resSelect')) $('#resSelect').value = savedRes;
+          var savedMirror = localStorage.getItem('cmd_cam_mirror');
+          if (savedMirror !== null && $('#camMirror')) $('#camMirror').checked = (savedMirror === '1');
+          var savedAuto = localStorage.getItem('cmd_cam_autostart');
+          if (savedAuto !== null && $('#camAutoStart')) $('#camAutoStart').checked = (savedAuto === '1');
+        } catch(e){}
+
+        self.applyMirror();
+
+        // Bind events
+        if ($('#camToggleBtn')) {
+          $('#camToggleBtn').addEventListener('click', function(){ self.toggle(); });
+        }
+        if ($('#camActionBtn')) {
+          $('#camActionBtn').addEventListener('click', function(){ self.start(); });
+        }
+        if ($('#camMirror')) {
+          $('#camMirror').addEventListener('change', function(){
+            self.applyMirror();
+            try { localStorage.setItem('cmd_cam_mirror', this.checked ? '1' : '0'); } catch(e){}
+          });
+        }
+        if ($('#camSelect')) {
+          $('#camSelect').addEventListener('change', function(){
+            try { localStorage.setItem('cmd_cam_facing', this.value); } catch(e){}
+            if (self.isStreaming) self.restart();
+          });
+        }
+        if ($('#resSelect')) {
+          $('#resSelect').addEventListener('change', function(){
+            try { localStorage.setItem('cmd_cam_res', this.value); } catch(e){}
+            if (self.isStreaming) self.restart();
+          });
+        }
+        if ($('#camAutoStart')) {
+          $('#camAutoStart').addEventListener('change', function(){
+            try { localStorage.setItem('cmd_cam_autostart', this.checked ? '1' : '0'); } catch(e){}
+          });
+        }
+
+        // Poll backend device / streaming status
+        self.pollStatus();
+
+        // Check autostart
+        var auto = false;
+        try { auto = (localStorage.getItem('cmd_cam_autostart') === '1'); } catch(e){}
+        if (auto) {
+          setTimeout(function(){ self.start(); }, 800);
+        }
+      },
+
+      applyMirror: function(){
+        var v = $('#camVideo');
+        if (!v) return;
+        var mirror = $('#camMirror') ? $('#camMirror').checked : true;
+        var facing = $('#camSelect') ? $('#camSelect').value : 'user';
+        v.classList.toggle('mirrored', mirror && facing === 'user');
+      },
+
+      showAlert: function(msg, isHtml){
+        var a = $('#camAlert');
+        if (!a) return;
+        if (isHtml) a.innerHTML = msg; else a.textContent = msg;
+        a.style.display = 'block';
+      },
+
+      hideAlert: function(){
+        var a = $('#camAlert');
+        if (a) a.style.display = 'none';
+      },
+
+      updateUI: function(state, subText){
+        var badge = $('#camBadge');
+        var stateDisp = $('#camStateDisplay');
+        var toggleBtn = $('#camToggleBtn');
+        var actionBtn = $('#camActionBtn');
+        var overlay = $('#camOverlay');
+        var overlayText = $('#camStatusText');
+        var video = $('#camVideo');
+
+        if (state === 'streaming') {
+          if (badge) { badge.textContent = 'LIVE'; badge.className = 'badge live'; }
+          if (stateDisp) { stateDisp.textContent = 'LIVE'; stateDisp.style.color = 'var(--ok)'; }
+          if (toggleBtn) { toggleBtn.textContent = 'Stop Streaming'; toggleBtn.className = 'btn danger'; }
+          if (overlay) overlay.style.display = 'none';
+          if (video) video.style.display = 'block';
+        } else if (state === 'starting') {
+          if (badge) { badge.textContent = 'STARTING'; badge.className = 'badge warn'; }
+          if (stateDisp) { stateDisp.textContent = 'STARTING…'; stateDisp.style.color = 'var(--warn)'; }
+          if (toggleBtn) { toggleBtn.textContent = 'Connecting…'; toggleBtn.disabled = true; }
+          if (overlay) overlay.style.display = 'flex';
+          if (overlayText) overlayText.textContent = subText || 'Connecting to virtual camera…';
+          if (actionBtn) actionBtn.style.display = 'none';
+        } else { // off or error
+          if (badge) { badge.textContent = (state === 'error' ? 'ERR' : 'OFF'); badge.className = 'badge' + (state === 'error' ? ' err' : ''); }
+          if (stateDisp) { stateDisp.textContent = (state === 'error' ? 'ERROR' : 'OFF'); stateDisp.style.color = (state === 'error' ? 'var(--danger)' : 'var(--muted)'); }
+          if (toggleBtn) { toggleBtn.textContent = 'Start Streaming'; toggleBtn.className = 'btn accent'; toggleBtn.disabled = false; }
+          if (overlay) overlay.style.display = 'flex';
+          if (overlayText) overlayText.textContent = subText || 'Webcam Stream Inactive';
+          if (actionBtn) { actionBtn.style.display = 'inline-flex'; actionBtn.textContent = 'Start Webcam'; }
+          if (video) video.style.display = 'none';
+          if ($('#camResDisplay')) $('#camResDisplay').textContent = '—';
+        }
+      },
+
+      pollStatus: function(){
+        var self = this;
+        fetch('/cam/status').then(function(r){ return r.json(); }).then(function(st){
+          if ($('#camDeviceDisplay')) $('#camDeviceDisplay').textContent = st.device;
+          self.deviceNode = st.device;
+          if (!st.device_exists && !self.isStreaming) {
+            self.showAlert('⚠️ <strong>Virtual webcam device ' + st.device + ' not loaded.</strong><br>Run on host: <code>sudo ./scripts/setup_v4l2loopback.sh</code>', true);
+          } else if (!self.isStreaming) {
+            self.hideAlert();
+          }
+        }).catch(function(){});
+        setTimeout(function(){ self.pollStatus(); }, 5000);
+      },
+
+      start: function(){
+        var self = this;
+        if (self.isStreaming) return;
+
+        self.hideAlert();
+
+        // Verify Secure Context (HTTPS or localhost)
+        if (!window.isSecureContext && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+          self.showAlert('🔒 <strong>Camera blocked: Insecure Context</strong><br>Android requires HTTPS to access camera. Please open <a href="https://' + location.host + '">https://' + location.host + '</a> and ensure "Ignore SSL Errors" is enabled in Fully Kiosk settings.', true);
+          self.updateUI('error', 'HTTPS required: Use https://' + location.host);
+          return;
+        }
+
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          self.showAlert('Camera API (getUserMedia) unavailable in this browser.', false);
+          self.updateUI('error', 'getUserMedia unavailable');
+          return;
+        }
+
+        self.updateUI('starting', 'Requesting camera access…');
+
+        var facing = $('#camSelect') ? $('#camSelect').value : 'user';
+        var resVal = $('#resSelect') ? $('#resSelect').value : '720';
+        var width = 1280, height = 720;
+        if (resVal === '1080') { width = 1920; height = 1080; }
+        else if (resVal === '480') { width = 640; height = 480; }
+
+        var constraints = {
+          audio: false,
+          video: {
+            facingMode: { ideal: facing },
+            width: { ideal: width },
+            height: { ideal: height },
+            frameRate: { ideal: 30 }
+          }
+        };
+
+        navigator.mediaDevices.getUserMedia(constraints).then(function(mediaStream){
+          self.stream = mediaStream;
+          var video = $('#camVideo');
+          if (video) {
+            video.srcObject = mediaStream;
+            video.play().catch(function(){});
+          }
+          self.applyMirror();
+
+          var track = mediaStream.getVideoTracks()[0];
+          var settings = track ? track.getSettings() : {};
+          var actualW = settings.width || width;
+          var actualH = settings.height || height;
+          var actualFps = settings.frameRate ? Math.round(settings.frameRate) : 30;
+          if ($('#camResDisplay')) {
+            $('#camResDisplay').textContent = actualW + 'x' + actualH + ' @ ' + actualFps + 'fps';
+          }
+
+          // Determine supported MIME type for MediaRecorder
+          var mimeType = '';
+          var candidates = ['video/webm;codecs=vp8', 'video/webm;codecs=h264', 'video/webm', 'video/mp4'];
+          for (var i = 0; i < candidates.length; i++) {
+            if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(candidates[i])) {
+              mimeType = candidates[i];
+              break;
+            }
+          }
+
+          // Connect WebSocket
+          var wsProto = (location.protocol === 'https:' ? 'wss:' : 'ws:');
+          var wsUrl = wsProto + '//' + location.host + '/ws/cam';
+          self.updateUI('starting', 'Connecting to ' + wsUrl + '…');
+
+          var ws = new WebSocket(wsUrl);
+          self.ws = ws;
+
+          ws.binaryType = 'arraybuffer';
+
+          ws.onopen = function(){
+            // Initialize MediaRecorder
+            try {
+              var recOptions = mimeType ? { mimeType: mimeType, videoBitsPerSecond: 2500000 } : {};
+              var recorder = new MediaRecorder(mediaStream, recOptions);
+              self.recorder = recorder;
+
+              recorder.ondataavailable = function(e){
+                if (e.data && e.data.size > 0 && self.ws && self.ws.readyState === WebSocket.OPEN) {
+                  self.ws.send(e.data);
+                }
+              };
+
+              // Send 50ms slices for low latency
+              recorder.start(50);
+              self.isStreaming = true;
+              self.updateUI('streaming');
+              toast('Webcam stream started');
+            } catch(recErr) {
+              self.stop();
+              self.showAlert('MediaRecorder failed: ' + recErr.message, false);
+              self.updateUI('error', 'Recorder error: ' + recErr.message);
+            }
+          };
+
+          ws.onmessage = function(event){
+            try {
+              var data = JSON.parse(event.data);
+              if (data.type === 'error') {
+                self.showAlert(data.message, false);
+                self.stop();
+              }
+            } catch(e){}
+          };
+
+          ws.onerror = function(){
+            if (self.isStreaming) {
+              self.showAlert('WebSocket streaming connection error', false);
+            }
+          };
+
+          ws.onclose = function(e){
+            if (self.isStreaming) {
+              self.stop();
+              if (e.code === 1008) {
+                self.showAlert('Virtual device not found. Run: sudo ./scripts/setup_v4l2loopback.sh', false);
+              } else {
+                toast('Webcam disconnected');
+              }
+            }
+          };
+
+        }).catch(function(err){
+          self.updateUI('error', 'Camera access error: ' + err.name);
+          var msg = 'Camera error: ' + err.message;
+          if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+            msg = 'Permission denied. Please grant Camera permission in Fully Kiosk Settings -> Web Permissions.';
+          } else if (err.name === 'NotFoundError') {
+            msg = 'No camera sensor found on this device.';
+          } else if (err.name === 'NotReadableError') {
+            msg = 'Camera is currently in use by another app or background service.';
+          }
+          self.showAlert(msg, false);
+        });
+      },
+
+      stop: function(){
+        var self = this;
+        self.isStreaming = false;
+
+        if (self.recorder) {
+          try { if (self.recorder.state !== 'inactive') self.recorder.stop(); } catch(e){}
+          self.recorder = null;
+        }
+
+        if (self.ws) {
+          try { self.ws.close(); } catch(e){}
+          self.ws = null;
+        }
+
+        if (self.stream) {
+          try {
+            self.stream.getTracks().forEach(function(t){ t.stop(); });
+          } catch(e){}
+          self.stream = null;
+        }
+
+        var video = $('#camVideo');
+        if (video) video.srcObject = null;
+
+        self.updateUI('off');
+      },
+
+      restart: function(){
+        var self = this;
+        self.stop();
+        setTimeout(function(){ self.start(); }, 300);
+      },
+
+      toggle: function(){
+        if (this.isStreaming) this.stop();
+        else this.start();
+      }
+    };
+
+    if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', function(){ renderWS(); refresh(); renderServices(); webcamController.init(); });
+    else { renderWS(); refresh(); renderServices(); webcamController.init(); }
   } catch(e){
     var d=document.createElement('div');
     d.style.cssText='position:fixed;top:0;left:0;right:0;background:#ff5252;color:#fff;padding:10px;font-size:12px;z-index:9999;';
