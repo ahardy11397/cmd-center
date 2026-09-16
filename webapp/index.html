@@ -121,6 +121,10 @@
   .cam-alert { font-size:12px; padding:10px 12px; border-radius:4px; background:rgba(255,74,61,0.15); border:1px solid var(--danger); color:#ff8b80; line-height:1.4; }
   .cam-alert a { color:var(--fg); text-decoration:underline; }
   .cam-alert code { background:rgba(0,0,0,0.4); padding:2px 5px; border-radius:3px; }
+
+  .clock { font-size:20px; font-weight:700; color:var(--accent);
+    font-variant-numeric:tabular-nums; letter-spacing:.08em;
+    padding:0 6px; white-space:nowrap; }
 </style>
 </head>
 <body>
@@ -135,6 +139,7 @@
     <a class="tab" href="#webcam">Webcam <span id="camBadge" class="badge">OFF</span></a>
   </div>
   <a class="tab" href="/system/lock">🔒 Lock</a>
+  <div class="clock" id="clock">--:--</div>
 </div>
 
 <!-- ============ DASHBOARD ============ -->
@@ -876,8 +881,19 @@
       }
     };
 
-    if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', function(){ renderWS(); refresh(); renderServices(); webcamController.init(); });
-    else { renderWS(); refresh(); renderServices(); webcamController.init(); }
+    function startClock(){
+      var el=$('#clock'); if(!el) return;
+      function tick(){
+        var d=new Date();
+        var h=d.getHours(), m=d.getMinutes();
+        el.textContent=(h<10?'0':'')+h+':'+(m<10?'0':'')+m;
+      }
+      tick();
+      setInterval(tick, 5000);
+    }
+
+    if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', function(){ renderWS(); refresh(); renderServices(); webcamController.init(); startClock(); });
+    else { renderWS(); refresh(); renderServices(); webcamController.init(); startClock(); }
   } catch(e){
     var d=document.createElement('div');
     d.style.cssText='position:fixed;top:0;left:0;right:0;background:#ff5252;color:#fff;padding:10px;font-size:12px;z-index:9999;';
