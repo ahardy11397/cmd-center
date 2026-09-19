@@ -311,6 +311,7 @@ async def status():
         "ram_pct": ram["pct"],
         "ram_used": ram["used"],
         "ram_total": ram["total"],
+        "disks": _disks(),
         "disk_pct": disk["pct"],
         "disk_used": disk["used"],
         "disk_total": disk["total"],
@@ -322,6 +323,8 @@ async def status():
         "users": _users(),
         "network": _net(),
         "uptime": _uptime(),
+        "services_running": _services_running(),
+        "notifications": _notifications(),
         "processes": _processes(),
     })
 
@@ -377,6 +380,76 @@ def _disk():
         return {"pct": int(p[4].rstrip("%")), "used": p[2], "total": p[1]}
     except Exception:
         return {"pct": 0, "used": "—", "total": "—"}
+
+
+def _disks():
+    """All real mounted filesystems (skip pseudo-fs)."""
+    try:
+        out = subprocess.check_output(
+            ["df", "-h", "--output=source,size,used,pcent,target",
+             "-x", "tmpfs", "-x", "devtmpfs", "-x", "efivarfs",
+             "-x", "squashfs", "-x", "overlay", "-x", "fusectl"],
+            text=True)
+        disks = []
+        for line in out.splitlines()[1:]:
+            p = line.split()
+            if len(p) < 5 or not p[0].startswith("/dev"):
+                continue
+            disks.append({
+                "dev": p[0].replace("/dev/", ""),
+                "target": p[4],
+                "pct": int(p[3].rstrip("%")),
+                "used": p[2],
+                "total": p[1],
+            })
+        # root first, then by target
+        disks.sort(key=lambda d: (d["target"] != "/", d["target"]))
+        return disks
+    except Exception:
+        return []
+
+
+def _services_running():
+    """Count of running systemd services (system + user)."""
+    total = 0
+    try:
+        out = subprocess.check_output(
+            ["systemctl", "list-units", "--type=service", "--state=running",
+             "--no-legend", "--no-pager"], text=True, stderr=subprocess.DEVNULL)
+        total += len([l for l in out.splitlines() if l.strip()])
+    except Exception:
+        pass
+    try:
+        out = subprocess.check_output(
+            ["systemctl", "--user", "list-units", "--type=service",
+             "--state=running", "--no-legend", "--no-pager"],
+            text=True, stderr=subprocess.DEVNULL)
+        total += len([l for l in out.splitlines() if l.strip()])
+    except Exception:
+        pass
+    return total
+
+
+def _notifications():
+    """Recent OS notifications: last 3 journal warnings/errors, oldest first."""
+    try:
+        out = subprocess.check_output(
+            ["journalctl", "-p", "warning", "-n", "3", "--no-pager", "-q",
+             "-o", "short", "--since", "-24h"],
+            text=True, stderr=subprocess.DEVNULL)
+        notes = []
+        for line in out.splitlines()[-3:]:
+            # "Sep 19 15:21:32 Kirby proc[123]: message..."
+            m = re.match(r"(\w+\s+\d+\s+\d+:\d+:\d+)\s+\S+\s+([^:]+?):\s*(.*)", line)
+            if m:
+                notes.append({
+                    "time": m.group(1).split(" ", 2)[-1][:5] + "",
+                    "src": m.group(2).split("[")[0].strip(),
+                    "msg": m.group(3)[:120],
+                })
+        return notes
+    except Exception:
+        return []
 
 
 def _gpu():

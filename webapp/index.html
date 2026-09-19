@@ -125,6 +125,29 @@
   .clock { font-size:20px; font-weight:700; color:var(--accent);
     font-variant-numeric:tabular-nums; letter-spacing:.08em;
     padding:0 6px; white-space:nowrap; }
+
+  /* all-disks mini rows */
+  .disk-rows { display:flex; flex-direction:column; gap:6px; margin-top:6px; width:100%; }
+  .disk-row { display:grid; grid-template-columns:64px 1fr 34px; gap:8px; align-items:center; font-size:11px; }
+  .disk-row .tgt { color:var(--muted); letter-spacing:.04em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .disk-row .bar-wrap { margin-top:0; height:7px; }
+  .disk-row .pct { text-align:right; font-variant-numeric:tabular-nums; color:var(--fg); }
+
+  /* notifications */
+  .gauge.wide { grid-column:span 2; }
+  .notif-rows { display:flex; flex-direction:column; gap:5px; margin-top:6px; max-height:80px; overflow:auto; }
+  .notif-row { display:flex; gap:8px; font-size:11px; line-height:1.35; align-items:baseline; }
+  .notif-row .t { color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .notif-row .s { color:var(--accent); white-space:nowrap; }
+  .notif-row .m { color:var(--fg); word-break:break-word; }
+
+  /* thermal gauge row */
+  .temp-row { display:grid; grid-template-columns:40px 1fr 44px; gap:8px; align-items:center; margin-top:6px; }
+  .temp-row .t-label { font-size:10px; color:var(--muted); letter-spacing:.12em; }
+  .temp-row .t-val { font-size:11px; text-align:right; font-variant-numeric:tabular-nums; color:var(--fg); }
+  .bar-wrap.temp { margin-top:0; height:6px; }
+  .bar.mid { background:#e6a23c; }
+  .bar.cool { background:var(--ok); }
 </style>
 </head>
 <body>
@@ -148,35 +171,36 @@
     <div class="cluster">
       <div class="gauge c-cpu">
         <div><div class="label">CPU</div><div class="value" id="cpu">—</div></div>
-        <div><div class="sub" id="cpuSub"></div><div class="bar-wrap"><div class="bar" id="cpuBar"></div></div></div>
+        <div>
+          <div class="bar-wrap"><div class="bar" id="cpuBar"></div></div>
+          <div class="temp-row"><span class="t-label">TEMP</span><div class="bar-wrap temp"><div class="bar" id="cpuTempBar"></div></div><span class="t-val" id="cpuTempVal">—</span></div>
+        </div>
+      </div>
+      <div class="gauge">
+        <div><div class="label">GPU</div><div class="value" id="gpu">—</div></div>
+        <div>
+          <div class="sub" id="gpuSub"></div>
+          <div class="bar-wrap"><div class="bar" id="gpuBar"></div></div>
+          <div class="temp-row"><span class="t-label">TEMP</span><div class="bar-wrap temp"><div class="bar" id="gpuTempBar"></div></div><span class="t-val" id="gpuTempVal">—</span></div>
+        </div>
       </div>
       <div class="gauge c-ram">
         <div><div class="label">RAM</div><div class="value" id="ram">—</div></div>
         <div><div class="sub" id="ramSub"></div><div class="bar-wrap"><div class="bar" id="ramBar"></div></div></div>
       </div>
       <div class="gauge">
-        <div><div class="label">Disk /</div><div class="value" id="disk">—</div></div>
-        <div><div class="sub" id="diskSub"></div><div class="bar-wrap"><div class="bar" id="diskBar"></div></div></div>
+        <div><div class="label">Disks</div><div class="disk-rows" id="diskRows"><span class="empty">loading…</span></div></div>
+      </div>
+      <div class="gauge wide" id="notifCard2">
+        <div><div class="label">Notifications</div><div class="notif-rows" id="notifRows"><span class="empty">no recent warnings</span></div></div>
       </div>
       <div class="gauge">
-        <div><div class="label">GPU</div><div class="value" id="gpu">—</div></div>
-        <div><div class="sub" id="gpuSub"></div><div class="bar-wrap"><div class="bar" id="gpuBar"></div></div></div>
-      </div>
-      <div class="gauge c-ok" id="tempCard">
-        <div><div class="label">CPU Temp</div><div class="value" id="cpuTemp">—</div></div>
-        <div><div class="sub" id="fanSub">thermals</div></div>
+        <div><div class="label">State</div><div class="value" id="uptime" style="font-size:16px">—</div></div>
+        <div><div class="value" id="svcLine" style="font-size:16px">—</div></div>
       </div>
       <div class="gauge">
         <div><div class="label">Network</div><div class="value" id="netIface" style="font-size:18px">—</div></div>
-        <div><div class="sub" id="netAddr"></div></div>
-      </div>
-      <div class="gauge">
-        <div><div class="label">Sessions</div><div class="value" id="users">—</div></div>
-        <div><div class="sub" id="usersSub"></div></div>
-      </div>
-      <div class="gauge">
-        <div><div class="label">Uptime</div><div class="value" id="uptime" style="font-size:16px">—</div></div>
-        <div><div class="sub" id="loadSub"></div></div>
+        <div><div class="value" id="netAddr" style="font-size:18px">—</div></div>
       </div>
     </div>
 
@@ -318,30 +342,63 @@
       b.className='bar'+(pct>90?' hot':'');
     }
 
+    // thermal gauge: width = °C (0-100 scale), color by severity
+    function setTemp(barId,valId,temp){
+      var b=$(barId), v=$(valId);
+      if(v) v.textContent=(temp!==null&&temp!==undefined)?(temp+'°C'):'—';
+      if(!b) return;
+      var t=Math.max(0,Math.min(100,temp||0));
+      b.style.width=t+'%';
+      b.className='bar'+(t>85?' hot':(t>65?' mid':' cool'));
+    }
+
     function refresh(){
       fetch('/system/status').then(function(r){ if(!r.ok) throw new Error(r.statusText); return r.json(); }).then(function(s){
         $('#cpu').textContent=s.cpu+'%';
         setBar('#cpuBar',s.cpu);
-        $('#cpuSub').textContent='load '+(s.load?s.load.join(' '):'—');
+        setTemp('#cpuTempBar','#cpuTempVal',s.cpu_temp);
         $('#ram').textContent=s.ram_pct+'%';
         $('#ramSub').textContent=s.ram_used+' / '+s.ram_total;
         setBar('#ramBar',s.ram_pct);
-        $('#disk').textContent=s.disk_pct+'%';
-        $('#diskSub').textContent=s.disk_used+' / '+s.disk_total+(s.nvme_temp?('  ·  '+s.nvme_temp+'°C'):'');
-        setBar('#diskBar',s.disk_pct);
         $('#gpu').textContent=s.gpu_pct+'%';
-        $('#gpuSub').textContent=s.gpu_temp?('temp '+s.gpu_temp+'°C'):'—';
         setBar('#gpuBar',s.gpu_pct);
-        var ct=$('#cpuTemp'); ct.textContent=s.cpu_temp?(s.cpu_temp+'°C'):'—';
-        $('#tempCard').className='gauge '+(s.cpu_temp>85?'c-danger':(s.cpu_temp>70?'c-warn':'c-ok'));
+        setTemp('#gpuTempBar','#gpuTempVal',s.gpu_temp);
+        // all disks
+        var dr=$('#diskRows');
+        if(dr){
+          if(!s.disks || !s.disks.length){ dr.innerHTML='<span class="empty">no disks</span>'; }
+          else {
+            dr.innerHTML='';
+            s.disks.forEach(function(dsk){
+              var row=document.createElement('div');
+              row.className='disk-row';
+              row.innerHTML='<span class="tgt">'+dsk.target+'</span>'+
+                '<div class="bar-wrap"><div class="bar'+(dsk.pct>90?' hot':'')+'" style="width:'+dsk.pct+'%"></div></div>'+
+                '<span class="pct">'+dsk.pct+'%</span>';
+              dr.appendChild(row);
+            });
+          }
+        }
+        $('#uptime').textContent=s.uptime||'—';
+        $('#svcLine').textContent=(s.services_running!==undefined)?(s.services_running+' services'):'—';
         var ni=(s.network&&s.network[0])||'—';
         var parts=String(ni).split(/\s+/);
         $('#netIface').textContent=parts[0]||'—';
         $('#netAddr').textContent=parts.slice(1).join(' ')||'';
-        $('#users').textContent=s.users;
-        $('#usersSub').textContent='logged in';
-        $('#uptime').textContent=s.uptime||'—';
-        $('#loadSub').textContent='load '+(s.load?s.load.join(' '):'—');
+        // notifications
+        var nr=$('#notifRows');
+        if(nr){
+          if(!s.notifications || !s.notifications.length){ nr.innerHTML='<span class="empty">no recent warnings</span>'; }
+          else {
+            nr.innerHTML='';
+            (s.notifications||[]).slice(-3).forEach(function(n){
+              var row=document.createElement('div');
+              row.className='notif-row';
+              row.innerHTML='<span class="t">'+n.time+'</span><span class="s">'+n.src+'</span><span class="m">'+n.msg+'</span>';
+              nr.appendChild(row);
+            });
+          }
+        }
         var pt=$('#procTable'); pt.innerHTML='';
         (s.processes||[]).forEach(function(p){
           var tr=document.createElement('tr');
