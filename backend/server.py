@@ -44,11 +44,17 @@ TERMINAL = "x-terminal-emulator"  # qterminal on this machine
 # Fully Kiosk remote admin (tablet)
 FULLY_URL = os.environ.get("FULLY_URL", "http://192.168.1.233:2323")
 # Password comes ONLY from backend/fully-psswd.txt (gitignored) or FULLY_PASS env var.
-# Never hardcoded.
+# Never hardcoded. Unreadable file -> warn and continue without tablet control.
 _fully_pw_file = APP_DIR / "backend" / "fully-psswd.txt"
-FULLY_PASS = os.environ.get("FULLY_PASS") or (
-    _fully_pw_file.read_text().strip() if _fully_pw_file.exists() else ""
-)
+FULLY_PASS = os.environ.get("FULLY_PASS") or ""
+if not FULLY_PASS and _fully_pw_file.exists():
+    try:
+        FULLY_PASS = _fully_pw_file.read_text().strip()
+    except OSError as e:
+        print(f"WARNING: cannot read { _fully_pw_file }: {e} — tablet control disabled")
+# URL-encode once here so special characters can't break the query string
+from urllib.parse import quote as _q
+FULLY_PASS_ENC = _q(FULLY_PASS)
 
 # Apps launchable by name (verified installed on this host)
 APPS = {
@@ -99,12 +105,23 @@ async def _fully(cmd: str) -> bool:
     try:
         proc = await asyncio.create_subprocess_exec(
             "curl", "-s", "-m", "5", "-o", "/dev/null", "-w", "%{http_code}",
-            f"{FULLY_URL}/?cmd={cmd}&password={FULLY_PASS}",
+            f"{FULLY_URL}/?cmd={cmd}&password={FULLY_PASS_ENC}",
             stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL)
         out, _ = await asyncio.wait_for(proc.communicate(), timeout=8)
         return proc.returncode == 0 and out.decode().strip().startswith("2")
     except Exception:
         return False
+
+
+# Strong references to background tasks (asyncio only holds weak refs)
+_bg_tasks: set = set()
+
+
+def _bg(coro):
+    t = asyncio.create_task(coro)
+    _bg_tasks.add(t)
+    t.add_done_callback(_bg_tasks.discard)
+    return t
 
 
 async def _mirror_lock_to_tablet():
@@ -134,7 +151,7 @@ async def _mirror_lock_to_tablet():
 
 @app.on_event("startup")
 async def _start_lock_mirror():
-    asyncio.create_task(_mirror_lock_to_tablet())
+    _bg(_mirror_lock_to_tablet())
 
 
 def _run_terminal(cmd: str):
@@ -228,10 +245,9 @@ async def system_get(action: str):
     if action not in cmds:
         return _redirect_page("unknown action")
     _spawn(cmds[action])
-    # Mirror the host state onto the tablet: screen off on lock/sleep/shutdown,
-    # back on if one of those actions is later reversed (wake/reboot pending).
-    if action in ("lock", "sleep", "logout", "reboot", "shutdown"):
-        asyncio.create_task(_fully("screenOff"))
+    # Mirror the host state onto the tablet: screen off on lock/sleep/shutdown.
+    if action in ("lock", "sleep", "reboot", "shutdown"):
+        _bg(_fully("screenOff"))
     return _redirect_page(action)
 
 
