@@ -41,6 +41,15 @@ CAM_DEVICE = os.environ.get("CAM_DEVICE", "/dev/video10")
 
 TERMINAL = "x-terminal-emulator"  # qterminal on this machine
 
+# Fully Kiosk remote admin (tablet)
+FULLY_URL = os.environ.get("FULLY_URL", "http://192.168.1.233:2323")
+# Password comes ONLY from backend/fully-psswd.txt (gitignored) or FULLY_PASS env var.
+# Never hardcoded.
+_fully_pw_file = APP_DIR / "backend" / "fully-psswd.txt"
+FULLY_PASS = os.environ.get("FULLY_PASS") or (
+    _fully_pw_file.read_text().strip() if _fully_pw_file.exists() else ""
+)
+
 # Apps launchable by name (verified installed on this host)
 APPS = {
     "firefox": "firefox",
@@ -83,6 +92,49 @@ def _redirect_page(msg: str = "ok") -> HTMLResponse:
 def _spawn(cmd: str):
     """Fire-and-forget launch on the host display."""
     subprocess.Popen(cmd, shell=True, start_new_session=True)
+
+
+async def _fully(cmd: str) -> bool:
+    """Send a command to the Fully Kiosk tablet. Best-effort; returns success."""
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            "curl", "-s", "-m", "5", "-o", "/dev/null", "-w", "%{http_code}",
+            f"{FULLY_URL}/?cmd={cmd}&password={FULLY_PASS}",
+            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL)
+        out, _ = await asyncio.wait_for(proc.communicate(), timeout=8)
+        return proc.returncode == 0 and out.decode().strip().startswith("2")
+    except Exception:
+        return False
+
+
+async def _mirror_lock_to_tablet():
+    """Poll the compositor's session-lock state and mirror it onto the tablet.
+
+    Machine locked   -> tablet screen off
+    Machine unlocked -> tablet screen on
+    Uses omarchy-hyprland-session-locked (exit 0=locked, 1=unlocked).
+    Runs until the process dies; one curl to the tablet only on state CHANGE.
+    """
+    last = None
+    while True:
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                "omarchy-hyprland-session-locked",
+                stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
+            await asyncio.wait_for(proc.wait(), timeout=8)
+            if proc.returncode in (0, 1):
+                locked = proc.returncode == 0
+                if locked != last:
+                    last = locked
+                    await _fully("screenOff" if locked else "screenOn")
+        except Exception:
+            pass
+        await asyncio.sleep(2)
+
+
+@app.on_event("startup")
+async def _start_lock_mirror():
+    asyncio.create_task(_mirror_lock_to_tablet())
 
 
 def _run_terminal(cmd: str):
@@ -167,13 +219,19 @@ async def system_get(action: str):
     cmds = {
         "lock": "loginctl lock-session",
         "sleep": "systemctl suspend",
-        "logout": "loginctl terminate-user $USER",
         "reboot": "systemctl reboot",
         "shutdown": "systemctl poweroff",
     }
+    # NOTE: "logout" intentionally removed. `loginctl terminate-user` kills the
+    # entire graphical session (uwsm/Hyprland), not just a lock screen — it
+    # crashed Hyprland (SEGV during teardown) when tested. Use "lock" instead.
     if action not in cmds:
         return _redirect_page("unknown action")
     _spawn(cmds[action])
+    # Mirror the host state onto the tablet: screen off on lock/sleep/shutdown,
+    # back on if one of those actions is later reversed (wake/reboot pending).
+    if action in ("lock", "sleep", "logout", "reboot", "shutdown"):
+        asyncio.create_task(_fully("screenOff"))
     return _redirect_page(action)
 
 

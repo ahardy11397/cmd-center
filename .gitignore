@@ -3,3 +3,6 @@ __pycache__/
 certs/*.pem
 captures/*.png
 .DS_Store
+fully-psswd.txt
+certs/
+*.pem
