@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # setup_v4l2loopback.sh — Configures Linux virtual webcam device for CMD Center
+# Supports both Debian-family (apt) and Arch-family (pacman) systems.
 set -euo pipefail
 
 VIDEO_NR="${1:-10}"
@@ -15,14 +16,33 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
-# 1. Install prerequisites if missing
-if ! dpkg -s v4l2loopback-dkms >/dev/null 2>&1; then
-    echo "--> Installing v4l2loopback-dkms and v4l2loopback-utils..."
-    apt-get update
-    apt-get install -y v4l2loopback-dkms v4l2loopback-utils
+# 1. Install prerequisites if missing (distro-aware)
+if command -v apt-get >/dev/null 2>&1; then
+    if ! dpkg -s v4l2loopback-dkms >/dev/null 2>&1; then
+        echo "--> Installing v4l2loopback-dkms and v4l2loopback-utils (apt)..."
+        apt-get update
+        apt-get install -y v4l2loopback-dkms v4l2loopback-utils
+    else
+        echo "--> v4l2loopback-dkms is already installed."
+    fi
+elif command -v pacman >/dev/null 2>&1; then
+    if ! pacman -Q v4l2loopback-dkms-git >/dev/null 2>&1 && ! pacman -Q v4l2loopback-dkms >/dev/null 2>&1; then
+        echo "--> Installing v4l2loopback-dkms (pacman)..."
+        pacman -Sy --noconfirm v4l2loopback-dkms
+    else
+        echo "--> v4l2loopback-dkms is already installed."
+    fi
 else
-    echo "--> v4l2loopback-dkms is already installed."
+    echo "--> No apt-get or pacman found; assuming module is already available."
 fi
+
+# Verify the module is actually built for the running kernel
+if ! modinfo v4l2loopback >/dev/null 2>&1; then
+    echo "ERROR: v4l2loopback module not found for kernel $(uname -r)."
+    echo "       Reinstall the dkms package or rebuild: dkms autoinstall"
+    exit 1
+fi
+echo "--> v4l2loopback module present for kernel $(uname -r)."
 
 # 2. Unload module if loaded with different parameters
 if lsmod | grep -q "^v4l2loopback "; then
@@ -47,7 +67,7 @@ v4l2loopback
 EOF
 
 cat <<EOF > /etc/modprobe.d/v4l2loopback.conf
-options v4l2loopback devices=1 video_nr=${VIDEO_NR} card_label="${CARD_LABEL}" exclusive_caps=1 max_buffers=2
+options v4l2loopback devices=1 video_nr=${VIDEO_NR} card_label="${CARD_LABEL}" exclusive_caps=1 max_buffers=8
 EOF
 
 # 5. Verify device

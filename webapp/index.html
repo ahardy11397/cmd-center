@@ -568,7 +568,7 @@
         if (state === 'streaming') {
           if (badge) { badge.textContent = 'LIVE'; badge.className = 'badge live'; }
           if (stateDisp) { stateDisp.textContent = 'LIVE'; stateDisp.style.color = 'var(--ok)'; }
-          if (toggleBtn) { toggleBtn.textContent = 'Stop Streaming'; toggleBtn.className = 'btn danger'; }
+          if (toggleBtn) { toggleBtn.textContent = 'Stop Streaming'; toggleBtn.className = 'btn danger'; toggleBtn.disabled = false; }
           if (overlay) overlay.style.display = 'none';
           if (video) video.style.display = 'block';
         } else if (state === 'starting') {

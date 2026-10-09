@@ -638,6 +638,19 @@ class WebcamManager:
         self.pc: RTCPeerConnection | None = None
         self.active_client: WebSocket | None = None
         self.lock = asyncio.Lock()
+        # Streaming health counters (reset on start)
+        self.frames_in = 0          # frames received from client
+        self.frames_written = 0     # frames successfully handed to ffmpeg stdin
+        self.stalls = 0             # stdin.drain() calls that had to wait
+        self.started_at: float | None = None
+        self.last_ffmpeg_error: str | None = None
+
+    def reset_stats(self):
+        import time as _t
+        self.frames_in = 0
+        self.frames_written = 0
+        self.stalls = 0
+        self.started_at = _t.monotonic()
 
     async def stop(self):
         if self.stream_task and not self.stream_task.done():
@@ -690,9 +703,10 @@ async def _stream_track_to_v4l2(track, req_w: int, req_h: int, req_fps: int):
             "ffmpeg",
             "-y",
             "-loglevel", "warning",
-            "-fflags", "+nobuffer+flush_packets",
+            "-fflags", "+nobuffer+flush_packets+genpts",
             "-flags", "+low_delay",
             "-avioflags", "direct",
+            "-use_wallclock_as_timestamps", "1",
             "-f", "rawvideo",
             "-pix_fmt", "yuv420p",
             "-s", f"{actual_w}x{actual_h}",
@@ -835,16 +849,27 @@ async def cam_status():
         (cam_manager.proc is not None and cam_manager.proc.returncode is None)
         or (cam_manager.pc is not None and cam_manager.pc.connectionState in ["connected", "connecting"])
     )
-    return JSONResponse({
+    import time as _t
+    stats = {
         "device": CAM_DEVICE,
         "device_exists": dev.exists(),
         "streaming": is_streaming,
-    })
+        "frames_in": cam_manager.frames_in,
+        "frames_written": cam_manager.frames_written,
+        "frames_dropped": max(0, cam_manager.frames_in - cam_manager.frames_written),
+    }
+    if cam_manager.started_at and cam_manager.frames_written >= 2:
+        elapsed = _t.monotonic() - cam_manager.started_at
+        stats["fps_measured"] = round(cam_manager.frames_written / elapsed, 1)
+    if cam_manager.last_ffmpeg_error:
+        stats["ffmpeg_error"] = cam_manager.last_ffmpeg_error
+    return JSONResponse(stats)
 
 
 @app.websocket("/ws/cam")
 async def websocket_cam(websocket: WebSocket, mode: str = "mjpeg", w: int = 1280, h: int = 720, fps: int = 30):
     await websocket.accept()
+    cam_manager.last_ffmpeg_error = None
 
     dev = Path(CAM_DEVICE)
     if not dev.exists():
@@ -879,6 +904,9 @@ async def websocket_cam(websocket: WebSocket, mode: str = "mjpeg", w: int = 1280
             else:
                 # Default: Direct JPEG frames via image2pipe for real-time ~50ms latency
                 # -s and -framerate allow image2pipe to initialize V4L2 immediately without error
+                # -use_wallclock_as_timestamps: MJPEG frames arrive in bursts from the
+                # tablet (canvas encode + WS batch); wallclock stamps prevent ffmpeg
+                # from drifting/stalling when input pacing is irregular.
                 width_val = max(320, min(1920, int(w)))
                 height_val = max(240, min(1080, int(h)))
                 fps_val = max(15, min(60, int(fps)))
@@ -886,9 +914,10 @@ async def websocket_cam(websocket: WebSocket, mode: str = "mjpeg", w: int = 1280
                     "ffmpeg",
                     "-y",
                     "-loglevel", "warning",
-                    "-fflags", "+nobuffer+flush_packets",
+                    "-fflags", "+nobuffer+flush_packets+genpts",
                     "-flags", "+low_delay",
                     "-avioflags", "direct",
+                    "-use_wallclock_as_timestamps", "1",
                     "-f", "image2pipe",
                     "-vcodec", "mjpeg",
                     "-s", f"{width_val}x{height_val}",
@@ -907,6 +936,17 @@ async def websocket_cam(websocket: WebSocket, mode: str = "mjpeg", w: int = 1280
             )
             cam_manager.proc = proc
             cam_manager.active_client = websocket
+            cam_manager.reset_stats()
+            # Watchdog: surface ffmpeg errors into cam status instead of
+            # failing silently. stderr parked in manager on exit.
+            async def _watch_ffmpeg():
+                try:
+                    err = await proc.stderr.read()
+                    if err and proc.returncode not in (0, None):
+                        cam_manager.last_ffmpeg_error = err.decode(errors="replace")[-500:]
+                except Exception:
+                    pass
+            _bg(_watch_ffmpeg())
         except Exception as e:
             await websocket.send_json({
                 "type": "error",
@@ -928,8 +968,10 @@ async def websocket_cam(websocket: WebSocket, mode: str = "mjpeg", w: int = 1280
             if "bytes" in message and message["bytes"]:
                 if cam_manager.proc and cam_manager.proc.returncode is None:
                     try:
+                        cam_manager.frames_in += 1
                         cam_manager.proc.stdin.write(message["bytes"])
                         await cam_manager.proc.stdin.drain()
+                        cam_manager.frames_written += 1
                     except (BrokenPipeError, ConnectionResetError):
                         break
             elif "text" in message and message["text"]:
